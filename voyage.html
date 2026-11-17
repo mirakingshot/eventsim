@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voyage Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg1: #e3e9f3; --bg2: #e7e3f1; --bg3: #c9bedd;
+    --shell: rgba(255, 255, 255, .28); --shell-line: rgba(255, 255, 255, .85);
+    --panel: rgba(255, 255, 255, .55); --panel-solid: #ffffff; --panel-line: rgba(255, 255, 255, .9);
+    --ink: #24223a; --muted: #6f6d82; --line: rgba(36, 34, 58, .09);
+    --navy: #2a1f55; --navy-ink: #ffffff;
+    --accent: #2a1f55; --accent-ink: #ffffff; --accent-soft: #ebe7fb;
+    --pill: rgba(255, 255, 255, .85);
+    --p-blue: #cfe1f6; --p-lav: #e7e4fb; --p-peach: #fbd6c7; --p-mint: #d6efe6;
+    --warn-bg: #fde3d6; --warn-ink: #8a3d1c; --input: rgba(255, 255, 255, .9); --ok: #2f9a72;
+    --c-common: #7b8597; --c-premium: #2f9a72; --c-exquisite: #4f92dc; --c-majestic: #e07a52;
+    --shadow: 0 10px 30px rgba(60, 50, 110, .08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg1: #15142a; --bg2: #1c1a33; --bg3: #2b2347;
+      --shell: rgba(255, 255, 255, .03); --shell-line: rgba(255, 255, 255, .08);
+      --panel: rgba(42, 38, 70, .62); --panel-solid: #2c2848; --panel-line: rgba(255, 255, 255, .07);
+      --ink: #ecebf5; --muted: #a6a3bd; --line: rgba(255, 255, 255, .08);
+      --navy: #b9a8f5; --navy-ink: #1a1633;
+      --accent: #b9a8f5; --accent-ink: #1a1633; --accent-soft: #3a3366;
+      --pill: rgba(255, 255, 255, .08);
+      --p-blue: #263a57; --p-lav: #353060; --p-peach: #553529; --p-mint: #20443a;
+      --warn-bg: #4a2c20; --warn-ink: #f7c3ab; --input: rgba(255, 255, 255, .06); --ok: #5fd0a3;
+      --c-common: #a9b1c2; --c-premium: #5fd0a3; --c-exquisite: #84b6f0; --c-majestic: #f39b76;
+      --shadow: 0 10px 30px rgba(0, 0, 0, .25);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg1: #15142a; --bg2: #1c1a33; --bg3: #2b2347;
+    --shell: rgba(255, 255, 255, .03); --shell-line: rgba(255, 255, 255, .08);
+    --panel: rgba(42, 38, 70, .62); --panel-solid: #2c2848; --panel-line: rgba(255, 255, 255, .07);
+    --ink: #ecebf5; --muted: #a6a3bd; --line: rgba(255, 255, 255, .08);
+    --navy: #b9a8f5; --navy-ink: #1a1633;
+    --accent: #b9a8f5; --accent-ink: #1a1633; --accent-soft: #3a3366;
+    --pill: rgba(255, 255, 255, .08);
+    --p-blue: #263a57; --p-lav: #353060; --p-peach: #553529; --p-mint: #20443a;
+    --warn-bg: #4a2c20; --warn-ink: #f7c3ab; --input: rgba(255, 255, 255, .06); --ok: #5fd0a3;
+    --c-common: #a9b1c2; --c-premium: #5fd0a3; --c-exquisite: #84b6f0; --c-majestic: #f39b76;
+    --shadow: 0 10px 30px rgba(0, 0, 0, .25);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; color: var(--ink); min-height: 100vh;
+    background: var(--bg1) linear-gradient(165deg, var(--bg1) 0%, var(--bg2) 55%, var(--bg3) 100%) fixed;
+    font: 14px/1.5 "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main {
+    max-width: 1140px; margin: 28px auto; padding: 20px;
+    background: var(--shell); border: 1.5px solid var(--shell-line); border-radius: 40px;
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  }
+  @media (max-width: 700px) { main { margin: 0; border-radius: 0; border: 0; padding: 16px; } }
+
+  /* top bar */
+  .topbar {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    background: var(--panel); border: 1px solid var(--panel-line); border-radius: 999px;
+    padding: 10px 12px 10px 24px; box-shadow: var(--shadow); margin-bottom: 20px;
+  }
+  .brand { font-size: 20px; font-weight: 600; letter-spacing: -.01em; margin-right: auto; }
+  .brand small { display: block; font-size: 11px; font-weight: 400; color: var(--muted); margin-top: -2px; }
+  .tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+  .tabs button {
+    background: transparent; color: var(--ink); border: 0; font-weight: 500; font-size: 13px;
+    padding: 10px 20px; border-radius: 999px;
+  }
+  .tabs button:hover { background: var(--pill); }
+  .tabs button[aria-pressed="true"] { background: var(--navy); color: var(--navy-ink); }
+  @media (max-width: 700px) { .topbar { border-radius: 24px; padding: 12px 16px; } .tabs { width: 100%; } .tabs button { flex: 1; padding: 10px 8px; } }
+
+  .intro { padding: 0 8px 18px; }
+  .intro h1 { font-size: 17px; font-weight: 600; margin: 0 0 2px; }
+  p.lede { color: var(--muted); margin: 0; max-width: 80ch; font-size: 13px; }
+
+  h2 { font-size: 18px; font-weight: 600; margin: 0 0 14px; letter-spacing: -.01em; }
+  h3 { font-size: 12px; margin: 18px 0 8px; color: var(--muted); font-weight: 500; text-transform: none; }
+  .grid { display: grid; gap: 18px; grid-template-columns: 330px minmax(0, 1fr); align-items: start; }
+  @media (max-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+  .panel {
+    background: var(--panel); border: 1px solid var(--panel-line); border-radius: 26px; padding: 20px;
+    box-shadow: var(--shadow); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  }
+  .panel.solid { background: var(--panel-solid); }
+  .panel + .panel { margin-top: 18px; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+  .panel-head h2 { margin: 0; }
+  .pill-tag {
+    font-size: 12px; font-weight: 500; padding: 7px 16px; border-radius: 999px;
+    background: var(--pill); border: 1px solid var(--line); color: var(--ink); white-space: nowrap;
+  }
+
+  label.field { display: grid; grid-template-columns: 1fr 156px; gap: 8px; align-items: center; margin: 10px 0; font-size: 13px; font-weight: 500; }
+  label.field small { display: block; color: var(--muted); font-size: 11.5px; font-weight: 400; grid-column: 1; grid-row: 2; margin-top: -8px; }
+  label.field > input, label.field > select { grid-column: 2; grid-row: 1 / span 2; }
+  #waysTbl td:nth-child(3) { white-space: nowrap; }
+  input, select {
+    font: inherit; font-size: 13px; color: var(--ink); background: var(--input);
+    border: 1px solid var(--line); border-radius: 14px; padding: 8px 12px; width: 100%; min-width: 0;
+  }
+  input[type="checkbox"] { width: 18px; height: 18px; justify-self: end; accent-color: var(--navy); }
+  input:focus, select:focus { outline: 2px solid var(--navy); outline-offset: 1px; }
+
+  /* stat cards — pastel like the task cards */
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
+  .kpi { border-radius: 22px; padding: 16px 18px 18px; background: var(--p-blue); min-height: 140px; display: flex; flex-direction: column; }
+  .kpi:nth-child(2) { background: var(--p-lav); }
+  .kpi:nth-child(3) { background: var(--p-peach); }
+  .kpi:nth-child(4) { background: var(--p-mint); }
+  .kpi .label {
+    align-self: flex-start; font-size: 11px; font-weight: 500; padding: 3px 12px; border-radius: 999px;
+    background: var(--pill); color: var(--ink);
+  }
+  .kpi .value { font-size: 34px; font-weight: 400; letter-spacing: -.02em; margin-top: 12px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .kpi .sub { font-size: 12px; color: var(--muted); margin-top: auto; padding-top: 8px; }
+  .kpi.main { background: var(--p-blue); }
+
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 13px; }
+  th, td { text-align: right; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: 0; }
+  th:first-child, td:first-child { text-align: left; }
+  th { font-size: 11.5px; color: var(--muted); font-weight: 500; }
+  td.l, th.l { text-align: left; }
+  td.best { font-weight: 600; color: var(--c-premium); }
+  tr.chosen td { background: var(--accent-soft); }
+  tr.chosen td:first-child { font-weight: 600; border-radius: 12px 0 0 12px; }
+  tr.chosen td:last-child { border-radius: 0 12px 12px 0; }
+  tr.chosen td:first-child::after { content: " · using"; color: var(--muted); font-weight: 400; font-size: 11px; }
+  tr.reached td { color: var(--muted); }
+  tr.pickable { cursor: pointer; }
+  tr.pickable:hover td { background: var(--pill); }
+  tr.pickable:focus-visible { outline: 2px solid var(--navy); outline-offset: -2px; }
+  tr.goal td, tr.goal:hover td { background: var(--navy); color: var(--navy-ink); }
+  tr.goal td .ok { color: var(--navy-ink); }
+  .covered { display: inline-block; font-size: 12px; font-weight: 500; padding: 2px 12px; border-radius: 999px; background: var(--line); color: var(--muted); }
+  tr.goal td .covered { background: rgba(255, 255, 255, .18); color: var(--navy-ink); }
+  tr.goal td:first-child { border-radius: 12px 0 0 12px; }
+  tr.goal td:last-child { border-radius: 0 12px 12px 0; }
+  .goal-box { margin-top: 14px; border-radius: 20px; padding: 16px 18px; background: var(--p-lav); }
+  .goal-empty { color: var(--muted); font-size: 13px; }
+  .goal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+  .goal-kicker { font-size: 11px; color: var(--muted); font-weight: 500; }
+  .goal-title { font-size: 16px; font-weight: 600; }
+  .goal-head button { padding: 6px 14px; font-size: 12px; }
+  .buy-list { list-style: none; margin: 0; padding: 0; }
+  .buy-list li, .goal-total, .goal-sub { display: flex; justify-content: space-between; gap: 12px; font-variant-numeric: tabular-nums; }
+  .buy-list li { padding: 8px 12px; margin: 6px 0; border-radius: 14px; background: var(--pill); font-size: 13px; font-weight: 500; }
+  .goal-total { margin-top: 10px; padding: 0 12px; font-size: 15px; }
+  .goal-total b { font-size: 20px; font-weight: 600; }
+  .goal-sub { padding: 0 12px; font-size: 12.5px; color: var(--muted); }
+  .goal-line { font-size: 13px; }
+  tr.next td { background: var(--p-peach); }
+  tr.next td:first-child { border-radius: 12px 0 0 12px; }
+  tr.next td:last-child { border-radius: 0 12px 12px 0; }
+  td input { width: 72px; text-align: right; padding: 5px 10px; border-radius: 10px; }
+  .table-wrap { overflow-x: auto; }
+  .warn { background: var(--warn-bg); color: var(--warn-ink); border-radius: 14px; padding: 10px 14px; font-size: 13px; margin-top: 12px; }
+  .note { color: var(--muted); font-size: 12px; margin-bottom: 0; }
+  .callout { background: var(--p-lav); border-radius: 16px; padding: 12px 16px; margin-bottom: 14px; font-size: 13px; }
+  button {
+    font: inherit; border: 0; border-radius: 999px; padding: 10px 20px; cursor: pointer;
+    background: var(--navy); color: var(--navy-ink); font-weight: 500; font-size: 13px;
+  }
+  button.ghost { background: var(--pill); color: var(--ink); border: 1px solid var(--line); }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .stepper { display: flex; align-items: center; gap: 4px; justify-content: flex-end; }
+  .stepper button {
+    width: 32px; height: 32px; padding: 0; background: var(--pill); color: var(--ink);
+    border: 1px solid var(--line); font-size: 16px; border-radius: 50%;
+  }
+  .stepper button:not(:disabled):hover { background: var(--navy); color: var(--navy-ink); }
+  .stepper button:disabled { opacity: .35; cursor: default; }
+  .stepper span { width: 30px; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .pack {
+    display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; margin: 8px 0;
+    font-size: 13px; font-weight: 500; padding: 10px 10px 10px 14px; border-radius: 18px; background: var(--pill);
+  }
+  .pack small { display: block; color: var(--muted); font-size: 11.5px; font-weight: 400; }
+  .ok { color: var(--ok); font-weight: 600; }
+  .t-common { color: var(--c-common); font-weight: 600; }
+  .t-premium { color: var(--c-premium); font-weight: 600; }
+  .t-exquisite { color: var(--c-exquisite); font-weight: 600; }
+  .t-majestic { color: var(--c-majestic); font-weight: 600; }
+  .own { display: none; }
+  .own.show { display: block; }
+  .tag { display: inline-block; font-size: 10.5px; font-weight: 500; padding: 1px 8px; border-radius: 999px; background: var(--p-lav); color: var(--ink); margin-left: 6px; }
+  .event-note { font-size: 12px; color: var(--muted); }
+  .prio { background: var(--pill); border-radius: 18px; padding: 12px 14px; margin: 6px 0 4px; }
+  .prio-head { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .prio-head button { padding: 4px 12px; font-size: 11.5px; }
+  .prio-row { display: grid; grid-template-columns: 1fr auto; gap: 0 8px; margin: 8px 0 2px; font-size: 12.5px; font-weight: 500; }
+  .prio-row input[type="range"] { grid-column: 1 / -1; padding: 0; border: 0; background: transparent; accent-color: var(--navy); height: 22px; }
+  .prio-pct { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .prio-out { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 12.5px; }
+  .prio-sug { margin-bottom: 10px; line-height: 1.6; }
+  .prio-sug b { font-size: 15px; }
+  .prio-sug button { padding: 3px 12px; font-size: 11.5px; margin-left: 4px; }
+  .mix-legend { display: flex; gap: 14px; font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .mix-legend i { display: inline-block; width: 14px; height: 6px; border-radius: 3px; margin-right: 5px; vertical-align: middle; }
+  .mix-row { display: grid; grid-template-columns: 1fr auto; gap: 3px 8px; font-size: 12px; margin: 8px 0; }
+  .mix-bar { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 3px; }
+  .mix-bar i { display: block; height: 6px; border-radius: 3px; min-width: 3px; }
+  i.want { background: transparent; box-shadow: inset 0 0 0 1px var(--muted); opacity: .55; }
+  i.got { background: var(--navy); }
+  .mix-pct { font-variant-numeric: tabular-nums; color: var(--muted); }
+  .mix-pct b { color: var(--ink); font-weight: 600; }
+  .team-tiles { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .team-tile {
+    display: grid; grid-template-columns: 36px 1fr auto; align-items: center; gap: 12px;
+    width: 100%; padding: 10px 14px 10px 10px; text-align: left;
+    border-radius: 18px; background: var(--pill); color: var(--ink); border: 1px solid var(--line);
+    font-weight: 500; transition: background .15s, color .15s, transform .1s;
+  }
+  .team-tile:hover { border-color: var(--navy); }
+  .team-tile:active { transform: scale(.99); }
+  .team-tile .tt-n {
+    width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--p-lav); font-size: 15px; font-weight: 600;
+  }
+  .team-tile .tt-text { display: flex; flex-direction: column; min-width: 0; }
+  .team-tile .tt-label { font-size: 13.5px; font-weight: 600; }
+  .team-tile .tt-sub { font-size: 11.5px; color: var(--muted); font-weight: 400; }
+  .team-tile .tt-cost {
+    font-size: 12px; font-weight: 500; white-space: nowrap; padding: 4px 10px; border-radius: 999px;
+    background: var(--panel-solid); border: 1px solid var(--line);
+  }
+  .team-tile.on { background: var(--navy); color: var(--navy-ink); border-color: transparent; }
+  .team-tile.on .tt-n { background: rgba(255, 255, 255, .18); }
+  .team-tile.on .tt-sub { color: inherit; opacity: .7; }
+  .team-tile.on .tt-cost { background: rgba(255, 255, 255, .14); border-color: transparent; color: inherit; }
+  td.src { font-size: 11.5px; color: var(--muted); max-width: 260px; }
+  .note a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+</style>
+</head>
+<body>
+<main>
+  <header class="topbar">
+    <div class="brand">Voyage Calculator<small>Kingshot · config 1.14.20</small></div>
+    <nav class="tabs" id="eventTabs" role="group" aria-label="Event"></nav>
+  </header>
+
+  <div class="intro">
+    <h1><span id="eventTitle">Voyage of Light</span> <span class="tag" id="eventNote"></span></h1>
+    <p class="lede">See which milestones your Compasses and packs reach, the cheapest packs for each milestone you're short of,
+      and the best way to merge your chests. Voyage of Light milestones 120 / 200 / 350 / 550 / 800 give 6 / 10 / 15 / 20 / 30 Gear Boost Custom Chests.</p>
+  </div>
+
+  <div class="grid">
+    <div>
+
+      <section class="panel">
+        <h2>1. Your Compasses</h2>
+        <h3 style="margin-top:0">Voyager Teams</h3>
+        <input type="hidden" id="teams" value="1">
+        <div class="team-tiles" id="teamTiles" role="group" aria-label="Voyager Teams"></div>
+        <label class="field">Banked Compasses <small>Already in your bag</small><input id="banked" type="number" min="0" value="0"></label>
+        <h3>Packs already bought</h3>
+        <div id="packs"></div>
+      </section>
+
+      <section class="panel">
+        <h2>3. Chests</h2>
+        <label class="field">Merge plan
+          <select id="way">
+            <option value="best">Best for my item</option>
+            <option value="open">Open all</option>
+            <option value="mergeCommon">Merge Common only</option>
+            <option value="mergePremium">Merge Premium only</option>
+            <option value="mergeAll">Merge everything</option>
+            <option value="own">My own merges</option>
+          </select></label>
+        <label class="field" id="targetRow">Item I care about <small>Used by "Best for my item"</small><select id="target"></select></label>
+        <div class="own" id="ownBox">
+          <div class="prio">
+            <div class="prio-head"><span>What do you want more of?</span><button type="button" class="ghost" id="prioEven">Even</button></div>
+            <div id="prioSliders"></div>
+            <div id="prioOut" class="prio-out"></div>
+          </div>
+          <h3>Merges <span id="ownMode" class="tag"></span></h3>
+          <label class="field">Common merges <small id="ownCmax"></small><input id="ownC" type="number" min="0" value="0"></label>
+          <label class="field">Premium merges <small id="ownPmax"></small><input id="ownP" type="number" min="0" value="0"></label>
+        </div>
+        <label class="field" id="pickRow">Gear Boost Custom Chest pick
+          <select id="pick">
+            <option value="">Keep as chests</option>
+            <option value="0">10 Lucky Hero Gear Chests</option>
+            <option value="1">10 Forgehammers</option>
+            <option value="2">20 Enhancement XP Parts</option>
+            <option value="3">1 Mithril</option>
+          </select></label>
+        <label class="field" id="openMatRow">Open Materials Chests <small>Count their Satin, Threads and Vision</small><input id="openMat" type="checkbox" checked></label>
+      </section>
+    </div>
+
+    <div>
+      <section class="panel solid">
+        <div class="panel-head"><h2>Voyages</h2><span class="pill-tag" id="spendTag"></span></div>
+        <div class="kpis" id="kpis"></div>
+        <div class="goal-box" id="goalBox" aria-live="polite"></div>
+        <p class="note" id="compBreak"></p>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>2. Milestones you reach</h2><span class="pill-tag" id="msTag"></span></div>
+        <div class="table-wrap"><table id="msTbl"></table></div>
+        <p class="note">Tap a milestone to make it your goal. The Voyages card then shows the cheapest packs to buy on top of what you already have, within pack limits,
+          and the rest of the page shows the results as if you'd bought them. Tap it again to clear.</p>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>3. Open or merge your chests</h2><span class="pill-tag" id="chestTag"></span></div>
+        <div id="chestNote" class="callout"></div>
+        <div class="table-wrap"><table id="waysTbl"></table></div>
+        <p class="note" id="waysNote"></p>
+      </section>
+
+      <section class="panel">
+        <h2>4. What you get</h2>
+        <div class="table-wrap"><table id="totalTbl"></table></div>
+        <p class="note">Exquisite and Majestic chests from merging are expected values (75% / 25%), so some totals have decimals.
+          "Worth" is what that many items cost in regular packs.</p>
+      </section>
+
+      <section class="panel solid">
+        <div class="panel-head"><h2>5. Price comparison</h2><span class="pill-tag" id="valueTag"></span></div>
+        <p class="note" style="margin:-6px 0 14px">What everything you get would cost if you bought it through regular packs instead.</p>
+        <div class="kpis" id="valueKpis"></div>
+        <div class="callout" id="goalValue" style="margin:14px 0 0"></div>
+        <h3>By item</h3>
+        <div class="table-wrap"><table id="valueTbl"></table></div>
+        <p class="note" id="valueNote"></p>
+        <div class="row" style="margin-top:12px"><button class="ghost" id="reset">Reset all to defaults</button></div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<script src="voyage.js"></script>
+<script>
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const cfg = WV.DEFAULTS;
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+  const fmt = (n, d) => {
+    if (!isFinite(n)) return "—";
+    const dd = d != null ? d : (Math.abs(n - Math.round(n)) < 1e-9 ? 0 : 1);
+    return n.toLocaleString(undefined, { maximumFractionDigits: dd, minimumFractionDigits: 0 });
+  };
+  const usd = (n) => "$" + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const STORE = "voyage-calc-v2";
+  // Rewards are for this server's age bracket (Day 155–224 in the game data).
+  const SERVER_DAY = 200;
+  const INPUTS = ["teams", "banked", "way", "target", "ownC", "ownP", "pick", "openMat"];
+
+  const events = clone(WV.EVENTS);
+  let state = { event: "light", bought: { common: 0, uncommon: 0, rare: 0, epic: 0 } };
+  const urlEvent = new URLSearchParams(location.search).get("event");
+
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORE) || "null");
+    if (saved) {
+      if (saved.state) state = Object.assign(state, saved.state);
+      if (saved.inputs) for (const [k, v] of Object.entries(saved.inputs)) {
+        const el = $(k); if (!el) continue;
+        if (el.type === "checkbox") el.checked = !!v; else el.dataset.saved = v, el.value = v;
+      }
+    }
+  } catch (e) { /* storage unavailable */ }
+  if (urlEvent && events.some((e) => e.key === urlEvent)) state.event = urlEvent;
+  const urlGoal = parseInt(new URLSearchParams(location.search).get("goal"), 10);
+  if (isFinite(urlGoal)) state.goal = urlGoal;
+
+  function save() {
+    try {
+      const inputs = {};
+      INPUTS.forEach((id) => { const el = $(id); inputs[id] = el.type === "checkbox" ? el.checked : el.value; });
+      localStorage.setItem(STORE, JSON.stringify({ state, inputs }));
+    } catch (e) { /* ignore */ }
+  }
+
+  const num = (id, lo, hi) => { let v = parseFloat($(id).value); if (!isFinite(v)) v = lo; return Math.min(hi, Math.max(lo, Math.floor(v))); };
+  const ev = () => events.find((e) => e.key === state.event) || events[0];
+  const set = () => { const e = ev(); let s = e.sets[0]; for (const x of e.sets) if (x.fromDay <= SERVER_DAY) s = x; return s; };
+  const userState = () => ({ teams: num("teams", 1, 4), banked: num("banked", 0, 1e5), bought: state.bought });
+  const name = (id) => WV.itemName(id);
+  const plural = (n, s) => (Math.round(n) === 1 ? s : (/(Chest|Shard|Part|Speedup|Design|Guide|Forgehammer|Vision)$/.test(s) ? s + "s" : s));
+  const qtyName = (q, id) => `${fmt(q)} ${plural(q, name(id))}`;
+
+  // ---------- event tabs ----------
+  function renderTabs() {
+    $("eventTabs").innerHTML = "";
+    events.forEach((e) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = e.name.replace(" Voyage", "").replace("Voyage of ", "");
+      b.setAttribute("aria-pressed", String(e.key === state.event));
+      b.addEventListener("click", () => {
+        state.event = e.key;
+        const u = new URL(location.href); u.searchParams.set("event", e.key);
+        try { history.replaceState(null, "", u); } catch (err) { /* file:// */ }
+        renderTabs(); fillTargets(); update();
+      });
+      $("eventTabs").appendChild(b);
+    });
+    $("eventNote").textContent = ev().category;
+    $("eventTitle").textContent = ev().name;
+  }
+
+  // ---------- pack steppers ----------
+  // Team tiles: tile n and every tile below it are on. Clicking the top lit tile steps down one.
+  const TEAM_TILES = [
+    { n: 1, label: "Team 1", sub: "Always unlocked", cost: "Free" },
+    { n: 2, label: "Team 2", sub: "Unlock with gems", cost: "2,000 gems" },
+    { n: 3, label: "Team 3", sub: "Unlock with gems", cost: "10,000 gems" },
+    { n: 4, label: "Team 4", sub: "Backpack pack", cost: "$4.99" },
+  ];
+  function renderTeams() {
+    const cur = num("teams", 1, 4);
+    const box = $("teamTiles"); box.innerHTML = "";
+    TEAM_TILES.forEach((t) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "team-tile" + (t.n <= cur ? " on" : "") + (t.n === cur ? " top" : "");
+      b.setAttribute("aria-pressed", String(t.n <= cur));
+      b.setAttribute("aria-label", `${t.n} team${t.n > 1 ? "s" : ""}, ${t.cost}`);
+      b.innerHTML = `<span class="tt-n">${t.n <= cur ? "✓" : t.n}</span><span class="tt-text"><span class="tt-label">${t.label}</span><span class="tt-sub">${t.sub}</span></span><span class="tt-cost">${t.cost}</span>`;
+      b.onclick = () => {
+        $("teams").value = t.n === cur && t.n > 1 ? t.n - 1 : t.n;
+        renderTeams(); update();
+      };
+      box.appendChild(b);
+    });
+  }
+
+  function renderPacks() {
+    const box = $("packs"); box.innerHTML = "";
+    cfg.packs.forEach((k) => {
+      const row = document.createElement("div"); row.className = "pack";
+      const n = state.bought[k.key] || 0;
+      row.innerHTML = `<div>${k.name.replace(" Sails Aloft Pack", "")} <small>${usd(k.priceUSD)} · ${fmt(k.compasses)} Compasses · limit ${k.limit}</small></div>`;
+      const st = document.createElement("div"); st.className = "stepper";
+      const minus = document.createElement("button"); minus.type = "button"; minus.textContent = "−"; minus.disabled = n <= 0;
+      minus.setAttribute("aria-label", "One fewer " + k.name);
+      const val = document.createElement("span"); val.textContent = n;
+      const plus = document.createElement("button"); plus.type = "button"; plus.textContent = "+"; plus.disabled = n >= k.limit;
+      plus.setAttribute("aria-label", "One more " + k.name);
+      minus.onclick = () => { state.bought[k.key] = Math.max(0, n - 1); renderPacks(); update(); };
+      plus.onclick = () => { state.bought[k.key] = Math.min(k.limit, n + 1); renderPacks(); update(); };
+      st.append(minus, val, plus); row.appendChild(st); box.appendChild(row);
+    });
+  }
+
+  // ---------- priority sliders for "My own merges" ----------
+  if (state.ownAuto == null) state.ownAuto = true;
+  state.weights = state.weights || {};
+  const weightsFor = (s) => {
+    const key = ev().key;
+    const w = (state.weights[key] = state.weights[key] || {});
+    WV.mainItems(s).forEach((id) => { if (w[id] == null) w[id] = 50; });
+    return w;
+  };
+  let sliderKey = "";
+
+  function buildSliders(s) {
+    const ids = WV.mainItems(s), w = weightsFor(s);
+    const key = ev().key + ":" + ids.join(",");
+    if (key === sliderKey) return;
+    sliderKey = key;
+    const box = $("prioSliders"); box.innerHTML = "";
+    ids.forEach((id) => {
+      const row = document.createElement("label"); row.className = "prio-row";
+      row.innerHTML = `<span class="prio-name">${name(id)}</span><span class="prio-pct" data-pct="${id}"></span>`;
+      const r = document.createElement("input");
+      r.type = "range"; r.min = 0; r.max = 100; r.step = 5; r.value = w[id];
+      r.setAttribute("aria-label", `How much you want ${name(id)}`);
+      r.addEventListener("input", () => { w[id] = +r.value; state.ownAuto = true; schedulePrio(); });
+      row.appendChild(r);
+      box.appendChild(row);
+    });
+  }
+  let prioRaf = 0;
+  function schedulePrio() { cancelAnimationFrame(prioRaf); prioRaf = requestAnimationFrame(update); }
+
+  function renderPriorities(s, ch, openMat) {
+    buildSliders(s);
+    const w = weightsFor(s), ids = WV.mainItems(s);
+    const sum = ids.reduce((a, id) => a + (w[id] || 0), 0);
+    ids.forEach((id) => {
+      const el = document.querySelector(`[data-pct="${id}"]`);
+      if (el) el.textContent = sum > 0 && w[id] > 0 ? `${Math.round((w[id] / sum) * 100)}%` : "skip";
+    });
+    $("ownMode").textContent = state.ownAuto ? "suggested" : "typed in";
+    if ($("way").value !== "own") return;
+    // Items are compared by regular-pack value; unpriced items by how many the best preset gives.
+    const presets = WV.compareWays(cfg, s, ch, null, openMat);
+    const unitOf = (id) => {
+      const u = WV.unitValue(id, values.map);
+      if (u && u.unit > 0) return u.unit;
+      return 1 / Math.max(1, ...presets.map((r) => r.items.get(id) || 0));
+    };
+    const sel = {};
+    ids.forEach((id) => { if (w[id] > 0) sel[id] = w[id]; });
+    const sug = WV.suggestMerges(cfg, s, ch, sel, unitOf, openMat);
+    if (!sug) { $("prioOut").innerHTML = `<span class="note">Move a slider above zero to get a suggestion.</span>`; return; }
+    if (state.ownAuto) { $("ownC").value = sug.c; $("ownP").value = sug.p; }
+    const bars = ids.filter((id) => sug.ids.includes(id)).map((id) => {
+      const i = sug.ids.indexOf(id);
+      return `<div class="mix-row"><span>${name(id)}</span><span class="mix-pct"><b>${Math.round(sug.gotShare[i] * 100)}%</b> / ${Math.round(sug.share[i] * 100)}%</span>` +
+        `<span class="mix-bar"><i style="width:${(sug.share[i] * 100).toFixed(1)}%" class="want"></i><i style="width:${(sug.gotShare[i] * 100).toFixed(1)}%" class="got"></i></span></div>`;
+    }).join("");
+    $("prioOut").innerHTML =
+      `<div class="prio-sug">Suggested: <b>${sug.c}</b> Common merges and <b>${sug.p}</b> Premium merges` +
+      (state.ownAuto ? "" : ` <button type="button" class="ghost" id="useSug">Use it</button>`) + `</div>` +
+      `<div class="mix-legend"><span><i class="got"></i>you get</span><span><i class="want"></i>wanted</span></div>${bars}` +
+      `<div class="note">Shares of the chests' regular-pack value. Some items come out of the same chests${ev().key === "light" ? " (Forgehammers and Mythic Shards both come from Exquisite and Majestic chests)" : ""}, so not every mix is possible. The plan raises the items you're furthest behind on as far as it can, and anything extra is a bonus.</div>`;
+    const use = $("useSug");
+    if (use) use.onclick = () => { state.ownAuto = true; update(); };
+  }
+
+  function fillTargets() {
+    const sel = $("target"); const prev = sel.value || sel.dataset.saved;
+    const ids = WV.mainItems(set());
+    sel.innerHTML = ids.map((id) => `<option value="${id}">${name(id)}</option>`).join("");
+    if (ids.map(String).includes(prev)) sel.value = prev;
+    $("pickRow").style.display = set().milestones.some((m) => WV.PICKS[m.id]) ? "" : "none";
+    $("openMatRow").style.display = ev().key === "windward" ? "" : "none";
+  }
+
+  // ---------- main update ----------
+  function update() {
+    const s = set(), base = userState();
+    const tierList = s.milestones.map((m) => m.voyages);
+    const plan = WV.milestonePlan(cfg, base, tierList);
+    if (state.goal != null && !tierList.includes(state.goal)) state.goal = null;
+    const gi = state.goal == null ? -1 : tierList.indexOf(state.goal);
+    const goal = gi >= 0 ? plan[gi] : null;
+    // Effective state = what you've bought + the packs the chosen milestone needs.
+    const st = { teams: base.teams, banked: base.banked, bought: { ...base.bought } };
+    if (goal && !goal.reached && goal.reachable) {
+      for (const [k, n] of Object.entries(goal.add)) st.bought[k] = (st.bought[k] || 0) + n;
+      if (goal.addVoyager) st.teams = WV.voyagerTeamNo(cfg);
+    }
+    const baseSpend = WV.spendUSD(cfg, base);
+    const comp = WV.compasses(cfg, st);
+    const vo = WV.voyages(cfg, st.teams, comp.total);
+    const spend = WV.spendUSD(cfg, st);
+    const openMat = ev().key === "windward" ? $("openMat").checked : true;
+    const pickRaw = $("pick").value;
+    const pick = pickRaw === "" ? null : +pickRaw;
+
+    // KPIs
+    const tiers = s.milestones.map((m) => m.voyages);
+    const reachedN = tiers.filter((v) => v <= vo.voyages).length;
+    const next = tiers.find((v) => v > vo.voyages);
+    const kpi = (l, v, sub, main) => `<div class="kpi${main ? " main" : ""}"><div class="label">${l}</div><div class="value">${v}</div><div class="sub">${sub || ""}</div></div>`;
+    $("kpis").innerHTML =
+      kpi("Voyages", fmt(vo.voyages), `${fmt(vo.sailed)} from team time + ${fmt(vo.fromCompasses)} from Compasses`, true) +
+      kpi("Milestones", `${reachedN} / ${tiers.length}`, next ? `next at ${fmt(next)} voyages` : "all reached") +
+      kpi("Compasses", fmt(comp.total), vo.spare ? `${fmt(vo.spare)} spare toward the next voyage` : "no spare hours") +
+      kpi("Spend", usd(spend.usd), (() => {
+        const parts = boughtParts(base).map(([l, v]) => `${usd(v)} ${l}`);
+        if (goal && !goal.reached && goal.reachable) parts.push(`${usd(goal.usd)} for ${fmt(goal.voyages)}`);
+        return parts.length ? parts.join(" + ") : "nothing bought yet";
+      })() +
+        (spend.teamGems ? ` · ${fmt(spend.teamGems)} gems on teams` : ""));
+    renderGoal(s, gi, goal, baseSpend, spend);
+    $("spendTag").textContent = `${st.teams} team${st.teams > 1 ? "s" : ""}`;
+    $("msTag").textContent = `${reachedN} of ${tiers.length} reached`;
+    $("chestTag").textContent = `${fmt(vo.voyages)} chests`;
+    $("compBreak").textContent =`Compasses: ${fmt(comp.free)} free (1 a day) + ${fmt(comp.banked)} banked + ${fmt(comp.packs)} from packs` +
+      (comp.voyager ? ` + ${fmt(comp.voyager)} from the Backpack` : "") +
+      `. Each team sails ${cfg.eventDays * 24} hours on its own; each voyage takes ${cfg.voyageHours} hours and each Compass adds ${cfg.hoursPerCompass} hour.`;
+
+    renderMilestones(s, plan, gi);
+    const ch = WV.chestSplit(cfg, vo.voyages);
+    renderPriorities(s, ch, openMat);
+    renderWays(s, ch, openMat);
+    const effItems = renderTotals(s, st, ch, vo.voyages, pick, openMat);
+    let goalCmp = null;
+    if (goal && !goal.reached && goal.reachable) {
+      const bvo = WV.voyages(cfg, base.teams, WV.compasses(cfg, base).total).voyages;
+      const baseItems = itemsFor(s, base, bvo, state._chosen.way, pick, openMat).all;
+      goalCmp = { goal, extra: WV.valueItems(effItems, values.map).total - WV.valueItems(baseItems, values.map).total };
+    }
+    renderValue(effItems, spend, goalCmp);
+    save();
+  }
+
+  // All items for a state, using a merge plan key.
+  function itemsFor(s, stt, have, way, pick, openMat) {
+    const ch = WV.chestSplit(cfg, have);
+    const m = way === "own" ? { c: num("ownC", 0, 1e6), p: num("ownP", 0, 1e6) } : WV.mergesFor(cfg, way, ch);
+    const chests = WV.chestItems(s, WV.afterMerge(cfg, ch, m), openMat);
+    const ms = WV.milestoneItems(s, have, pick, openMat);
+    const packs = WV.packItems(cfg, stt);
+    const all = new Map();
+    [chests, ms, packs].forEach((x) => { for (const [id, q] of x) all.set(id, (all.get(id) || 0) + q); });
+    return { chests, ms, packs, all };
+  }
+
+  // ---------- regular-pack prices ----------
+  const values = { map: WV.VALUES_SNAPSHOT, live: false, error: null };
+  async function loadValues() {
+    try {
+      const res = await fetch(WV.VALUES_URL);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const m = WV.parseValues(await res.text());
+      if (!Object.keys(m).length) throw new Error("empty sheet");
+      values.map = m; values.live = true;
+    } catch (e) { values.error = e.message || String(e); }
+    update();
+  }
+
+  const usdItem = (n) => (n >= 1 ? usd(n) : "$" + n.toFixed(4));
+
+  function renderValue(items, spend, goalCmp) {
+    const v = WV.valueItems(items, values.map);
+    const ratio = spend.usd > 0 ? v.total / spend.usd : null;
+    const kpi = (l, val, sub) => `<div class="kpi"><div class="label">${l}</div><div class="value">${val}</div><div class="sub">${sub}</div></div>`;
+    $("valueKpis").innerHTML =
+      kpi("Worth in regular packs", usd(v.total), "what these items cost in normal packs") +
+      kpi("You spend", usd(spend.usd), spend.usd > 0 ? "on Sails Aloft packs" : "free to play") +
+      kpi("Value", ratio == null ? "Free" : `${fmt(ratio, 1)}×`, ratio == null ? "nothing spent" : ratio >= 1 ? `${usd(v.total - spend.usd)} more than you pay` : `${usd(spend.usd - v.total)} less than you pay`);
+    $("valueTag").textContent = values.live ? "Live prices" : "Saved prices";
+    $("goalValue").innerHTML = goalCmp
+      ? `The packs for <b>${fmt(goalCmp.goal.voyages)} voyages</b> cost <b>${usd(goalCmp.goal.usd)}</b> and add items worth <b>${usd(goalCmp.extra)}</b> in regular packs` +
+        (goalCmp.goal.usd > 0 ? ` (${fmt(goalCmp.extra / goalCmp.goal.usd, 1)}× what you pay).` : ".")
+      : "";
+    $("goalValue").style.display = goalCmp ? "" : "none";
+    $("valueTbl").innerHTML = `<thead><tr><th>Item</th><th>Qty</th><th>Regular price each</th><th>Worth</th><th class="l">Priced from</th></tr></thead><tbody>` +
+      (v.rows.length ? v.rows.map((r) => `<tr><td>${name(r.id)}</td><td>${fmt(r.qty)}</td><td>${usdItem(r.unit)}</td><td><b>${usd(r.value)}</b></td>` +
+        `<td class="l src">${r.via !== name(r.id) && r.via ? r.via + " · " : ""}${r.source}</td></tr>`).join("")
+        : `<tr><td colspan="5" class="note">Nothing yet.</td></tr>`) + "</tbody>";
+    $("valueNote").innerHTML = (v.unpriced.length ? `Not priced on the masterlist, so not counted: ${v.unpriced.map((u) => `${fmt(u.qty)} ${name(u.id)}`).join(", ")}. ` : "") +
+      `A Gear Boost Custom Chest you keep is valued at its best pick. 5m speedups are 1/12 of a 1h speedup. ` +
+      (values.live ? `Prices load live from <a href="${WV.VALUES_PAGE}" target="_blank" rel="noopener">Mira's KS Value Guide masterlist</a>.`
+        : `Couldn't load the live <a href="${WV.VALUES_PAGE}" target="_blank" rel="noopener">masterlist</a>${values.error ? ` (${values.error})` : ""}, so these are the prices saved on 2026-11-17.`);
+  }
+
+  const packShort = (k) => cfg.packs.find((x) => x.key === k).name.replace(" Sails Aloft Pack", "");
+
+  function chooseGoal(v) {
+    state.goal = state.goal === v ? null : v;
+    update();
+  }
+
+  // What you've already paid for, by kind: [label, usd]
+  function boughtParts(st) {
+    const parts = [];
+    if (st.teams >= WV.voyagerTeamNo(cfg)) parts.push(["4th team (Backpack)", cfg.voyagerPack.priceUSD]);
+    const packs = cfg.packs.reduce((a, k) => a + k.priceUSD * (st.bought[k.key] || 0), 0);
+    if (packs > 0) parts.push(["Sails Aloft packs", packs]);
+    return parts;
+  }
+
+  function renderGoal(s, gi, goal, baseSpend, spend) {
+    const box = $("goalBox");
+    if (!goal) {
+      box.innerHTML = `<div class="goal-empty">Tap a milestone below to see the packs you need to reach it.</div>`;
+      return;
+    }
+    const m = s.milestones[gi];
+    const reward = `${fmt(m.qty)}× ${name(m.id)}`;
+    const clear = `<button class="ghost" type="button" id="clearGoal">Clear</button>`;
+    let body;
+    if (goal.reached) {
+      body = `<div class="goal-line"><span class="ok">✓ Already reached</span> with what you have. Nothing more to buy.</div>`;
+    } else if (!goal.reachable) {
+      body = `<div class="goal-line">Out of reach: you'd need ${fmt(goal.missing)} more Compasses than every pack you can still buy gives.</div>`;
+    } else {
+      const lines = Object.entries(goal.add).map(([k, n]) => {
+        const p = cfg.packs.find((x) => x.key === k);
+        return `<li><span>${n}× ${p.name}</span><span>${usd(p.priceUSD * n)}</span></li>`;
+      });
+      if (goal.addVoyager) lines.push(`<li><span>1× ${cfg.voyagerPack.name} (4th team)</span><span>${usd(cfg.voyagerPack.priceUSD)}</span></li>`);
+      body = `<ul class="buy-list">${lines.join("")}</ul>
+        <div class="goal-total"><span>To buy</span><b>${usd(goal.usd)}</b></div>
+        ${baseSpend.usd > 0 ? boughtParts(userState()).map(([l, v]) => `<div class="goal-sub"><span>Already bought: ${l}</span><span>${usd(v)}</span></div>`).join("") +
+        `<div class="goal-sub"><span>Total spend</span><span>${usd(spend.usd)}</span></div>` : ""}
+        <div class="note">${fmt(goal.short)} voyages short today (${fmt(goal.compassesNeeded)} Compasses). These packs leave ${fmt(goal.spare)} Compasses spare.</div>`;
+    }
+    box.innerHTML = `<div class="goal-head"><div><div class="goal-kicker">Goal</div><div class="goal-title">${fmt(goal.voyages)} voyages · ${reward}</div></div>${clear}</div>${body}`;
+    $("clearGoal").onclick = () => chooseGoal(goal.voyages);
+  }
+
+  function renderMilestones(s, plan, gi) {
+    const firstShort = plan.findIndex((p) => !p.reached);
+    const tbl = $("msTbl"); tbl.innerHTML = "";
+    const head = tbl.createTHead().insertRow();
+    ["Voyages", "Reward", "Cost to reach"].forEach((h, i) => { const th = document.createElement("th"); th.textContent = h; if (i === 1) th.className = "l"; head.appendChild(th); });
+    const tb = tbl.createTBody();
+    s.milestones.forEach((m, i) => {
+      const p = plan[i];
+      const tr = tb.insertRow();
+      const cls = ["pickable"];
+      if (i === gi) cls.push("goal");
+      else if (p.reached) cls.push("reached");
+      else if (i === firstShort && gi < 0) cls.push("next");
+      tr.className = cls.join(" ");
+      tr.tabIndex = 0;
+      tr.setAttribute("role", "button");
+      tr.setAttribute("aria-pressed", String(i === gi));
+      tr.setAttribute("aria-label", `Goal: ${m.voyages} voyages`);
+      tr.addEventListener("click", () => chooseGoal(m.voyages));
+      tr.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); chooseGoal(m.voyages); } });
+      tr.insertCell().textContent = fmt(m.voyages);
+      const rc = tr.insertCell(); rc.className = "l"; rc.textContent = `${fmt(m.qty)}× ${name(m.id)}`;
+      const sc = tr.insertCell();
+      if (p.reached) sc.innerHTML = `<span class="covered">Covered</span>`;
+      else if (!p.reachable) sc.textContent = "Out of reach";
+      else sc.innerHTML = `<b>${usd(p.usd)}</b>`;
+    });
+  }
+
+  function chestCell(n, k) { return `<span class="t-${k}">${fmt(n)}</span>`; }
+
+  function renderWays(s, ch, openMat) {
+    const sel = $("way").value;
+    const target = +$("target").value;
+    const own = { c: num("ownC", 0, 1e6), p: num("ownP", 0, 1e6) };
+    $("ownBox").classList.toggle("show", sel === "own");
+    $("targetRow").style.display = sel === "own" ? "none" : "";
+    $("ownCmax").textContent = `max ${WV.maxCommonMerges(cfg, ch)}`;
+    const ownClamped = WV.clampMerges(cfg, own, ch);
+    $("ownPmax").textContent = `max ${WV.maxPremiumMerges(cfg, ch, ownClamped.c)}`;
+
+    const rows = WV.compareWays(cfg, s, ch, sel === "own" ? own : null, openMat);
+    const items = WV.mainItems(s);
+    const best = {};
+    items.forEach((id) => { best[id] = Math.max(...rows.filter((r) => r.way !== "own").map((r) => r.items.get(id) || 0)); });
+    const bestForTarget = rows.filter((r) => r.way !== "own").reduce((a, b) => ((b.items.get(target) || 0) > (a.items.get(target) || 0) + 1e-9 ? b : a));
+    const chosen = sel === "best" ? bestForTarget : rows.find((r) => r.way === sel) || bestForTarget;
+    state.chosenWay = chosen.way;
+
+    const total = ch.common + ch.premium;
+    $("chestNote").innerHTML = total === 0
+      ? "No voyages yet, so no chests."
+      : `${fmt(total)} voyages bring back about ${chestCell(ch.common, "common")} <span class="t-common">Common</span> and ${chestCell(ch.premium, "premium")} <span class="t-premium">Premium</span> chests (90% / 10%). ` +
+        (sel === "best" ? `Best for <b>${name(target)}</b>: <b>${WV.WAY_LABELS[bestForTarget.way]}</b>.` : `Using <b>${WV.WAY_LABELS[chosen.way]}</b>.`);
+
+    const th = (t, l) => `<th${l ? ' class="l"' : ""}>${t}</th>`;
+    $("waysTbl").innerHTML = `<thead><tr>${th("Plan")}${th("Merges<br>C / P")}${th("Open")}${items.map((id) => th(name(id))).join("")}</tr></thead><tbody>` +
+      rows.map((r) => `<tr class="${r === chosen ? "chosen" : ""}"><td>${WV.WAY_LABELS[r.way]}</td>` +
+        `<td>${r.merges.c} / ${r.merges.p}</td>` +
+        `<td>${chestCell(r.common, "common")} · ${chestCell(r.premium, "premium")} · ${chestCell(r.exquisite, "exquisite")} · ${chestCell(r.majestic, "majestic")}</td>` +
+        items.map((id) => { const v = r.items.get(id) || 0; return `<td class="${r.way !== "own" && v > 0 && Math.abs(v - best[id]) < 1e-9 ? "best" : ""}">${fmt(v)}</td>`; }).join("") +
+        "</tr>").join("") + "</tbody>";
+
+    const pm = chosen.merges.p;
+    const rng = WV.exquisiteRange(cfg, pm);
+    $("waysNote").innerHTML = `"Open" lists chests to open after merging: <span class="t-common">Common</span> · <span class="t-premium">Premium</span> · <span class="t-exquisite">Exquisite</span> · <span class="t-majestic">Majestic</span>. ` +
+      `3 Common merge into 1 Premium; 3 Premium merge into 1 Exquisite (75%) or Majestic (25%). Best values per item are highlighted.` +
+      (pm > 0 ? ` With ${pm} Premium merges, 8 in 10 players get ${rng.low}–${rng.high} Exquisite and the rest Majestic.` : "");
+    state._chosen = chosen;
+  }
+
+  function renderTotals(s, st, ch, have, pick, openMat) {
+    const chosen = state._chosen;
+    const fromChests = chosen.items;
+    const fromMs = WV.milestoneItems(s, have, pick, openMat);
+    const fromPacks = WV.packItems(cfg, st);
+    const all = new Map();
+    [fromChests, fromMs, fromPacks].forEach((x) => { for (const [id, q] of x) all.set(id, (all.get(id) || 0) + q); });
+    const ids = [];
+    [fromChests, fromMs, fromPacks].forEach((m) => { for (const id of m.keys()) if (!ids.includes(id)) ids.push(id); });
+    const tot = (id) => (fromChests.get(id) || 0) + (fromMs.get(id) || 0) + (fromPacks.get(id) || 0);
+    ids.sort((a, b) => {
+      const order = (id) => ([101, 100003, 200102, 200103, 620001, 620002].includes(id) ? 1 : 0);
+      return order(a) - order(b) || tot(b) - tot(a);
+    });
+    const c = (v) => `<td>${v ? fmt(v) : "—"}</td>`;
+    const worth = (id) => { const u = WV.unitValue(id, values.map); return u ? usd(u.unit * tot(id)) : "—"; };
+    $("totalTbl").innerHTML = `<thead><tr><th>Item</th><th>Chests</th><th>Milestones</th><th>Packs</th><th>Total</th><th>Worth</th></tr></thead><tbody>` +
+      (ids.length ? ids.map((id) => `<tr><td>${name(id)}${WV.PICKS[id] ? '<span class="tag">pick</span>' : ""}</td>${c(fromChests.get(id))}${c(fromMs.get(id))}${c(fromPacks.get(id))}<td><b>${fmt(tot(id))}</b></td><td>${worth(id)}</td></tr>`).join("")
+        : `<tr><td colspan="6" class="note">Nothing yet.</td></tr>`) + "</tbody>";
+    return all;
+  }
+
+  // ---------- wiring ----------
+  $("prioEven").addEventListener("click", () => {
+    const w = weightsFor(set());
+    WV.mainItems(set()).forEach((id) => (w[id] = 50));
+    sliderKey = ""; state.ownAuto = true; update();
+  });
+  INPUTS.forEach((id) => $(id).addEventListener(id === "banked" || id === "ownC" || id === "ownP" ? "input" : "change", () => {
+    if (id === "ownC" || id === "ownP") state.ownAuto = false;
+    update();
+  }));
+  $("reset").addEventListener("click", () => { try { localStorage.removeItem(STORE); } catch (e) { /* ignore */ } location.reload(); });
+
+  renderTabs();
+  renderTeams();
+  renderPacks();
+  fillTargets();
+  update();
+  loadValues();
+})();
+</script>
+</body>
+</html>
