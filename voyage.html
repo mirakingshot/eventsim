@@ -259,7 +259,7 @@
     <div>
 
       <section class="panel">
-        <h2>1. Your Compasses</h2>
+        <h2>Your Compasses</h2>
         <h3 style="margin-top:0">Voyager Teams</h3>
         <input type="hidden" id="teams" value="1">
         <div class="team-tiles" id="teamTiles" role="group" aria-label="Voyager Teams"></div>
@@ -269,7 +269,7 @@
       </section>
 
       <section class="panel">
-        <h2>3. Chests</h2>
+        <h2>Merge settings</h2>
         <label class="field">Merge plan
           <select id="way">
             <option value="best">Best for my item</option>
@@ -311,28 +311,28 @@
       </section>
 
       <section class="panel">
-        <div class="panel-head"><h2>2. Milestones you reach</h2><span class="pill-tag" id="msTag"></span></div>
+        <div class="panel-head"><h2>Milestones you reach</h2><span class="pill-tag" id="msTag"></span></div>
         <div class="table-wrap"><table id="msTbl"></table></div>
         <p class="note">Tap a milestone to make it your goal. The Voyages card then shows the cheapest packs to buy on top of what you already have, within pack limits,
           and the rest of the page shows the results as if you'd bought them. Tap it again to clear.</p>
       </section>
 
       <section class="panel">
-        <div class="panel-head"><h2>3. Open or merge your chests</h2><span class="pill-tag" id="chestTag"></span></div>
+        <div class="panel-head"><h2>Open or merge your chests</h2><span class="pill-tag" id="chestTag"></span></div>
         <div id="chestNote" class="callout"></div>
         <div class="table-wrap"><table id="waysTbl"></table></div>
         <p class="note" id="waysNote"></p>
       </section>
 
       <section class="panel">
-        <h2>4. What you get</h2>
+        <h2>What you get</h2>
         <div class="table-wrap"><table id="totalTbl"></table></div>
         <p class="note">Exquisite and Majestic chests from merging are expected values (75% / 25%), so some totals have decimals.
           "Worth" is what that many items cost in regular packs.</p>
       </section>
 
       <section class="panel solid">
-        <div class="panel-head"><h2>5. Price comparison</h2><span class="pill-tag" id="valueTag"></span></div>
+        <div class="panel-head"><h2>Price comparison</h2><span class="pill-tag" id="valueTag"></span></div>
         <p class="note" style="margin:-6px 0 14px">What everything you get would cost if you bought it through regular packs instead.</p>
         <div class="kpis" id="valueKpis"></div>
         <div class="callout" id="goalValue" style="margin:14px 0 0"></div>
@@ -637,10 +637,9 @@
         (goalCmp.goal.usd > 0 ? ` (${fmt(goalCmp.extra / goalCmp.goal.usd, 1)}× what you pay).` : ".")
       : "";
     $("goalValue").style.display = goalCmp ? "" : "none";
-    $("valueTbl").innerHTML = `<thead><tr><th>Item</th><th>Qty</th><th>Regular price each</th><th>Worth</th><th class="l">Priced from</th></tr></thead><tbody>` +
-      (v.rows.length ? v.rows.map((r) => `<tr><td>${name(r.id)}</td><td>${fmt(r.qty)}</td><td>${usdItem(r.unit)}</td><td><b>${usd(r.value)}</b></td>` +
-        `<td class="l src">${r.via !== name(r.id) && r.via ? r.via + " · " : ""}${r.source}</td></tr>`).join("")
-        : `<tr><td colspan="5" class="note">Nothing yet.</td></tr>`) + "</tbody>";
+    $("valueTbl").innerHTML = `<thead><tr><th>Item</th><th>Qty</th><th>Regular price each</th><th>Worth</th></tr></thead><tbody>` +
+      (v.rows.length ? v.rows.map((r) => `<tr><td>${name(r.id)}</td><td>${fmt(r.qty)}</td><td>${usdItem(r.unit)}</td><td><b>${usd(r.value)}</b></td></tr>`).join("")
+        : `<tr><td colspan="4" class="note">Nothing yet.</td></tr>`) + "</tbody>";
     $("valueNote").innerHTML = (v.unpriced.length ? `Not priced on the masterlist, so not counted: ${v.unpriced.map((u) => `${fmt(u.qty)} ${name(u.id)}`).join(", ")}. ` : "") +
       `A Gear Boost Custom Chest you keep is valued at its best pick. 5m speedups are 1/12 of a 1h speedup. ` +
       (values.live ? `Prices load live from <a href="${WV.VALUES_PAGE}" target="_blank" rel="noopener">Mira's KS Value Guide masterlist</a>.`
