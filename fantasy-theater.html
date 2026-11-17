@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fantasy Theater Simulator</title>
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --panel: #fffdf6;
+    --ink: #2b2a26;
+    --muted: #6d6a60;
+    --line: #e2dccb;
+    --accent: #1f8a70;
+    --accent-ink: #ffffff;
+    --accent-soft: #d8efe7;
+    --gold: #c98a12;
+    --warn-bg: #fff1d6;
+    --warn-ink: #7a4b00;
+    --bar: #36a383;
+    --bar-hi: #c98a12;
+    --input: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 1080px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  h2 { font-size: 17px; margin: 0 0 12px; }
+  h3 { font-size: 13px; margin: 16px 0 8px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  p.lede { color: var(--muted); margin: 0 0 20px; max-width: 72ch; }
+  .grid { display: grid; gap: 16px; grid-template-columns: 340px minmax(0, 1fr); align-items: start; }
+  @media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .panel + .panel { margin-top: 16px; }
+  label.field { display: grid; grid-template-columns: 1fr 120px; gap: 8px; align-items: center; margin: 8px 0; font-size: 14px; }
+  label.field small { display: block; color: var(--muted); font-size: 12px; }
+  input, select {
+    font: inherit; color: var(--ink); background: var(--input);
+    border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; width: 100%; min-width: 0;
+  }
+  input[type="checkbox"] { width: auto; justify-self: end; }
+  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .kpi { border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+  .kpi .label { font-size: 12px; color: var(--muted); }
+  .kpi .value { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .kpi .sub { font-size: 12px; color: var(--muted); }
+  .kpi.main { background: var(--accent-soft); border-color: transparent; }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 14px; }
+  th, td { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  th:first-child, td:first-child { text-align: left; }
+  th { font-size: 12px; color: var(--muted); font-weight: 600; }
+  td.best { font-weight: 700; color: var(--accent); }
+  tr.chosen td:first-child { font-weight: 700; }
+  tr.chosen td:first-child::after { content: " ◀ using"; color: var(--muted); font-weight: 400; font-size: 12px; }
+  td input { width: 84px; text-align: right; padding: 4px 6px; }
+  .table-wrap { overflow-x: auto; }
+  .warn { background: var(--warn-bg); color: var(--warn-ink); border-radius: 8px; padding: 10px 12px; font-size: 14px; margin-top: 12px; }
+  .note { color: var(--muted); font-size: 13px; }
+  .callout { background: var(--accent-soft); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; }
+  button {
+    font: inherit; border: 0; border-radius: 8px; padding: 8px 14px; cursor: pointer;
+    background: var(--accent); color: var(--accent-ink); font-weight: 600;
+  }
+  button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--line); }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  details { margin-top: 16px; }
+  details summary { cursor: pointer; font-weight: 600; }
+  svg text { fill: var(--muted); font-size: 11px; }
+  .buys { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .buys b { color: var(--ink); }
+  .status { font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Fantasy Theater Simulator</h1>
+  <p class="lede">Estimates how much you need to spend on Fantasy Amulet packs to end up with a target number of Fantasy Tokens.
+    It plays the event thousands of times with the published odds (pity ascent, +1/+2/+3 floors, Fanstars and Fantasy Fortress runs),
+    tries every claim floor, and prices each run with the cheapest mix of packs.</p>
+
+  <div class="grid">
+    <div>
+      <section class="panel">
+        <h2>Your situation</h2>
+        <label class="field">Target Fantasy Tokens <small>Total you want to end up with</small><input id="target" type="number" min="0" step="1000" value="50000"></label>
+        <label class="field">Tokens you have now<input id="curTokens" type="number" min="0" value="4960"></label>
+        <label class="field">Amulets you have now<input id="curAmulets" type="number" min="0" value="3"></label>
+        <label class="field">Event days left <small>Including today (event is 6 days)</small><input id="daysLeft" type="number" min="1" max="6" value="6"></label>
+        <label class="field">Free amulets per day<input id="freePerDay" type="number" min="0" value="40"></label>
+        <label class="field">Already collected today's free amulets<input id="freeCollected" type="checkbox"></label>
+        <label class="field">Other free amulets <small>Anything extra you expect</small><input id="freeAmulets" type="number" min="0" value="0"></label>
+        <div class="note" id="freeSummary"></div>
+        <h3>Where you are now</h3>
+        <label class="field">In a Fortress run<input id="inFortress" type="checkbox"></label>
+        <label class="field">Current floor<input id="curFloor" type="number" min="1" max="7" value="1"></label>
+        <label class="field">Attempts until guaranteed ascent <small>Shown under the floor, 1–5</small><input id="pityLeft" type="number" min="1" max="5" value="5"></label>
+        <label class="field">Fanstars you have<input id="curFanstars" type="number" min="0" max="4" value="0"></label>
+        <h3>Strategy</h3>
+        <label class="field">Claim at <small>In normal runs. Fortress runs always go to Floor 8.</small>
+          <select id="claimAt">
+            <option value="auto" selected>Best for me</option>
+            <option value="2">Floor 2+</option><option value="3">Floor 3+</option><option value="4">Floor 4+</option>
+            <option value="5">Floor 5+</option><option value="6">Floor 6+</option><option value="7">Floor 7 (top)</option>
+          </select></label>
+        <label class="field">Simulated runs <small>Per claim floor</small><input id="trials" type="number" min="200" max="20000" step="500" value="2000"></label>
+        <label class="field">Ignore pack daily limits<input id="ignoreLimits" type="checkbox"></label>
+        <div class="row" style="margin-top:12px">
+          <button id="run">Run simulation</button>
+          <span class="status" id="status"></span>
+        </div>
+      </section>
+    </div>
+
+    <div>
+      <section class="panel">
+        <h2>Cost to reach your target</h2>
+        <div id="pickNote" class="callout"></div>
+        <div class="kpis" id="kpis"></div>
+        <div id="buys" class="buys"></div>
+        <div id="warnings"></div>
+        <h3>Spend distribution across runs</h3>
+        <div id="hist"></div>
+        <p class="note">Each bar counts runs needing that much spend. The amber line is the average and the dashed line is the 90th percentile: 9 in 10 runs needed this much or less.</p>
+      </section>
+
+      <section class="panel">
+        <h2>What does a budget get me?</h2>
+        <label class="field">Spend (USD)<input id="budget" type="number" min="0" step="5" value="100"></label>
+        <div id="budgetOut"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Which floor should you claim at?</h2>
+        <div class="table-wrap"><table id="strategy"></table></div>
+        <p class="note">Every failed exploration pays 10 tokens per amulet, so claiming at Floors 2–5 comes out about even.
+          Higher floors only pull ahead once you have enough amulets to finish expensive climbs and collect Fanstars for Fortress runs.
+          With few amulets you risk running out mid-climb, which is why Floor 2 wins at small budgets.
+          The best value in each column is highlighted. "Long run" is an exact calculation for unlimited amulets.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Event data</h2>
+        <p class="note">Rewards, odds, costs and failure tokens come from the game. Fortress claim rewards for Floors 2–7 are assumed to match normal floors.
+          They only matter if amulets run out mid-Fortress. Edit anything here if the event changes.</p>
+        <details open>
+          <summary>Normal floors</summary>
+          <div class="table-wrap"><table id="floorsTbl"></table></div>
+        </details>
+        <details>
+          <summary>Fantasy Fortress floors</summary>
+          <div class="table-wrap"><table id="fortTbl"></table></div>
+          <label class="field">Fanstars needed for Fortress<input id="fanstarsNeeded" type="number" min="1" value="5"></label>
+        </details>
+        <details>
+          <summary>Packs</summary>
+          <div class="table-wrap"><table id="packsTbl"></table></div>
+          <p class="note">"Buys left" = daily limit × event days left − bought today: how many more of each pack you can buy before the event ends.</p>
+        </details>
+        <details>
+          <summary>Probabilities</summary>
+          <h3>Ascent chance by attempt on the same floor</h3>
+          <div class="table-wrap"><table id="pityTbl"></table></div>
+          <h3>Floors gained per ascent</h3>
+          <div class="table-wrap"><table id="stepTbl"></table></div>
+          <h3>Fanstars received on reaching Floor 7</h3>
+          <div class="table-wrap"><table id="fanTbl"></table></div>
+        </details>
+        <div class="row" style="margin-top:12px"><button class="ghost" id="reset">Reset all to defaults</button></div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<script src="nav.js"></script>
+<script src="sim.js"></script>
+<script>
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n, d = 0) => (isFinite(n) ? n.toLocaleString(undefined, { maximumFractionDigits: d, minimumFractionDigits: d }) : "—");
+  const usd = (n) => (isFinite(n) ? "$" + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "beyond limits");
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+  const STORE = "fantasy-theater-sim-v4"; // bump when DEFAULTS change shape so stale saves don't override them
+  const INPUT_IDS = ["target", "curTokens", "curAmulets", "daysLeft", "freePerDay", "freeCollected", "freeAmulets",
+    "inFortress", "curFloor", "pityLeft", "curFanstars", "claimAt", "trials", "ignoreLimits", "budget"];
+
+  let data = clone(FT.DEFAULTS);
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORE) || "null");
+    if (saved && saved.data) data = Object.assign(clone(FT.DEFAULTS), saved.data);
+    if (saved && saved.inputs) for (const [k, v] of Object.entries(saved.inputs)) {
+      const el = $(k); if (!el) continue;
+      if (el.type === "checkbox") el.checked = !!v; else el.value = v;
+    }
+  } catch (e) { /* storage unavailable */ }
+
+  function save() {
+    try {
+      const inputs = {};
+      INPUT_IDS.forEach((id) => { const el = $(id); inputs[id] = el.type === "checkbox" ? el.checked : el.value; });
+      localStorage.setItem(STORE, JSON.stringify({ data, inputs }));
+    } catch (e) { /* ignore */ }
+  }
+
+  // ---------- inputs ----------
+  const num = (id, lo, hi) => { let v = parseFloat($(id).value); if (!isFinite(v)) v = lo; return Math.min(hi, Math.max(lo, v)); };
+  const daysLeft = () => Math.round(num("daysLeft", 1, 365));
+  const maxBuys = (k, days) => Math.max(0, Math.floor(k.dailyLimit) * days - Math.floor(k.boughtToday));
+  function freeToCome() {
+    const days = daysLeft() - ($("freeCollected").checked ? 1 : 0);
+    return Math.max(0, days) * num("freePerDay", 0, 1e6) + num("freeAmulets", 0, 1e9);
+  }
+  const ownedAmulets = () => num("curAmulets", 0, 1e9) + freeToCome();
+  function startState() {
+    const fortress = $("inFortress").checked;
+    const floors = fortress ? data.fortressFloors : data.floors;
+    const pityLen = data.ascentByAttempt.length;
+    return {
+      mode: fortress ? "fortress" : "normal",
+      floor: Math.round(num("curFloor", 1, floors.length - 1)),
+      attempt: pityLen - Math.round(num("pityLeft", 1, pityLen)),
+      fanstars: fortress ? 0 : Math.round(num("curFanstars", 0, data.fanstarsNeeded - 1)),
+    };
+  }
+  const normalize = (arr) => { const s = arr.reduce((a, b) => a + b, 0) || 1; return arr.map((v) => v / s); };
+  function params(claimAt) {
+    const p = clone(data);
+    p.stepProbs = normalize(p.stepProbs);
+    p.fanstarProbs = normalize(p.fanstarProbs);
+    p.ascentByAttempt = p.ascentByAttempt.map((v) => Math.min(1, Math.max(0, v)));
+    if (p.ascentByAttempt[p.ascentByAttempt.length - 1] <= 0) p.ascentByAttempt[p.ascentByAttempt.length - 1] = 1;
+    p.floors.forEach((f) => (f.cost = Math.max(1, f.cost)));
+    p.fortressFloors.forEach((f) => (f.cost = Math.max(1, f.cost)));
+    const days = daysLeft();
+    p.packs.forEach((k) => (k.maxBuys = maxBuys(k, days)));
+    p.claimAt = claimAt;
+    return p;
+  }
+
+  // ---------- editable data tables ----------
+  function numInput(value, onChange, step) {
+    const i = document.createElement("input");
+    i.type = "number"; i.value = value; i.step = step || "any"; i.min = 0;
+    i.addEventListener("change", () => { onChange(parseFloat(i.value) || 0); save(); schedule(); });
+    return i;
+  }
+  function buildTable(tbl, headers, rows) {
+    tbl.innerHTML = "";
+    const thead = tbl.createTHead().insertRow();
+    headers.forEach((h) => { const th = document.createElement("th"); th.textContent = h; thead.appendChild(th); });
+    const tb = tbl.createTBody();
+    rows.forEach((cells) => {
+      const tr = tb.insertRow();
+      cells.forEach((c) => { const td = tr.insertCell(); if (c instanceof Node) td.appendChild(c); else td.textContent = c; });
+    });
+  }
+  function floorRows(floors) {
+    const top = floors.length;
+    return floors.map((f) => [
+      "Floor " + f.floor,
+      f.floor === top ? "— (run ends)" : numInput(f.cost, (v) => (f.cost = v), 1),
+      f.floor === top ? "—" : numInput(f.fail, (v) => (f.fail = v), 10),
+      f.floor === 1 ? "—" : numInput(f.reward, (v) => (f.reward = v), 10),
+    ]);
+  }
+  function renderDataTables() {
+    const H = ["Floor", "Amulets / explore", "Tokens on fail", "Claim reward"];
+    buildTable($("floorsTbl"), H, floorRows(data.floors));
+    buildTable($("fortTbl"), H, floorRows(data.fortressFloors));
+    buildTable($("packsTbl"), ["Pack", "Price $", "Amulets", "Amulets / $", "Daily limit", "Bought today", "Buys left"],
+      data.packs.map((k) => {
+        const rate = document.createElement("span");
+        const left = document.createElement("span");
+        left.className = "buys-left";
+        const upd = () => (rate.textContent = fmt(k.amulets / k.price, 2));
+        upd();
+        return [k.name,
+          numInput(k.price, (v) => { k.price = v; upd(); }, 0.01),
+          numInput(k.amulets, (v) => { k.amulets = v; upd(); }, 10),
+          rate,
+          numInput(k.dailyLimit, (v) => (k.dailyLimit = v), 1),
+          numInput(k.boughtToday, (v) => (k.boughtToday = v), 1),
+          left];
+      }));
+    const pctRow = (arr, label) => arr.map((v, i) => [label(i), numInput(+(v * 100).toFixed(3), (x) => (arr[i] = x / 100), 0.001)]);
+    buildTable($("pityTbl"), ["Exploration on floor", "Ascent %"], pctRow(data.ascentByAttempt, (i) => "#" + (i + 1)));
+    buildTable($("stepTbl"), ["Ascend by", "Chance %"], pctRow(data.stepProbs, (i) => "+" + (i + 1) + " floor" + (i ? "s" : "")));
+    buildTable($("fanTbl"), ["Fanstars", "Chance %"], pctRow(data.fanstarProbs, (i) => String(i + 1)));
+    $("fanstarsNeeded").value = data.fanstarsNeeded;
+    updateBuysLeft();
+  }
+  function updateBuysLeft() {
+    const days = daysLeft();
+    document.querySelectorAll("#packsTbl tbody tr").forEach((tr, i) => {
+      const el = tr.querySelector(".buys-left");
+      if (el && data.packs[i]) el.textContent = maxBuys(data.packs[i], days);
+    });
+  }
+  $("fanstarsNeeded").addEventListener("change", (e) => { data.fanstarsNeeded = Math.max(1, Math.round(+e.target.value || 1)); save(); schedule(); });
+
+  // ---------- main run ----------
+  let exactCache = { key: "", rows: null };
+  function exactRates() {
+    const key = JSON.stringify(data);
+    if (exactCache.key !== key) {
+      const rows = {};
+      for (let c = 2; c <= data.floors.length; c++) rows[c] = FT.exactEfficiency(params(c)).tokensPerAmulet;
+      exactCache = { key, rows };
+    }
+    return exactCache.rows;
+  }
+
+  function run() {
+    const t0 = performance.now();
+    const top = data.floors.length;
+    const target = num("target", 0, 1e9);
+    const have = num("curTokens", 0, 1e9);
+    const owned = ownedAmulets();
+    const trials = Math.round(num("trials", 100, 50000));
+    const ignore = $("ignoreLimits").checked;
+    const budget = num("budget", 0, 1e7);
+    const need = Math.max(0, target - have);
+    const start = startState();
+    const sel = $("claimAt").value;
+    const base = params(top);
+
+    updateBuysLeft();
+    $("freeSummary").textContent = `Amulets without paying: ${fmt(num("curAmulets", 0, 1e9))} now + ${fmt(freeToCome())} free to come = ${fmt(owned)}.`;
+
+    // Amulets the budget buys (independent of strategy).
+    const bestRate = Math.max(...base.packs.map((k) => k.amulets / k.price));
+    const budgetPricer = FT.buildPricer(base.packs, Math.ceil(budget * bestRate) + 1000, ignore);
+    const bought = budgetPricer.maxForBudget(budget);
+    const budgetAmulets = owned + (bought.amulets || 0);
+
+    // Every claim floor: amulets to reach target + tokens from budget.
+    const rows = [];
+    let maxSpent = 0;
+    for (let c = 2; c <= top; c++) {
+      const p = params(c);
+      const spent = FT.amuletsToReach(p, need, trials, start);
+      const st = FT.stats(spent);
+      maxSpent = Math.max(maxSpent, st.max);
+      const btok = FT.tokensFromAmulets(p, budgetAmulets, Math.min(trials, 2000), start);
+      const bst = FT.stats(btok);
+      const hit = Array.from(btok).filter((v) => have + v >= target).length / btok.length;
+      rows.push({ c, spent, st, bst, hit });
+    }
+    const pricer = FT.buildPricer(base.packs, Math.max(0, maxSpent - owned), ignore);
+    rows.forEach((r) => {
+      r.costs = new Float64Array(r.spent.length);
+      r.infeasible = 0;
+      for (let i = 0; i < r.spent.length; i++) {
+        const c = pricer(r.spent[i] - owned).cost;
+        r.costs[i] = c;
+        if (!isFinite(c)) r.infeasible++;
+      }
+      r.cst = FT.stats(r.costs);
+    });
+    const rates = exactRates();
+    const bestTarget = rows.reduce((a, b) => (b.st.mean < a.st.mean ? b : a));
+    const bestBudget = rows.reduce((a, b) => (b.bst.mean > a.bst.mean ? b : a));
+    const bestLong = rows.reduce((a, b) => (rates[b.c] > rates[a.c] ? b : a));
+    const chosenT = sel === "auto" ? bestTarget : rows.find((r) => r.c === +sel) || bestTarget;
+    const chosenB = sel === "auto" ? bestBudget : rows.find((r) => r.c === +sel) || bestBudget;
+    const label = (c) => (c === top ? `Floor ${c}` : `Floor ${c}+`);
+
+    $("pickNote").innerHTML = need === 0
+      ? "You already have your target."
+      : (sel === "auto"
+        ? `Best for your target: <b>claim at ${label(bestTarget.c)}</b>. The table below compares every claim floor.`
+        : `Using <b>${label(chosenT.c)}</b>. The best for your target would be ${label(bestTarget.c)} (${fmt(bestTarget.st.mean)} amulets on average vs ${fmt(chosenT.st.mean)}).`);
+
+    renderKpis(chosenT, need, owned, pricer);
+    renderWarnings(chosenT, pricer, owned, 1 / bestRate);
+    renderHist(chosenT.costs, chosenT.cst, chosenT.infeasible === 0);
+    renderBudget(chosenB, bought, budgetAmulets, have, sel === "auto", label);
+    renderStrategy(rows, rates, { bestTarget, bestBudget, bestLong, chosen: chosenT }, label, budget);
+    $("status").textContent = `${fmt(trials)} runs × ${rows.length} claim floors in ${fmt(performance.now() - t0)} ms`;
+    save();
+  }
+
+  function renderKpis(r, need, owned, pricer) {
+    const kpi = (label, value, sub, main) => `<div class="kpi${main ? " main" : ""}"><div class="label">${label}</div><div class="value">${value}</div><div class="sub">${sub || ""}</div></div>`;
+    const ok = r.infeasible === 0;
+    $("kpis").innerHTML =
+      kpi("Average spend", ok ? usd(r.cst.mean) : "—", ok ? "mean across runs" : "some runs exceed pack limits", true) +
+      kpi("Median spend", usd(r.cst.p50), "half of runs spend less") +
+      kpi("90% of runs", usd(r.cst.p90), "spend this or less") +
+      kpi("Amulets needed", fmt(r.st.mean), `avg · median ${fmt(r.st.p50)} · p90 ${fmt(r.st.p90)}`) +
+      kpi("Tokens still needed", fmt(need), `${fmt(owned)} amulets without paying`);
+    if (need === 0) { $("buys").innerHTML = ""; return; }
+    const describe = (amulets) => {
+      const x = pricer(amulets - owned);
+      if (!isFinite(x.cost)) return "more than the packs can supply";
+      if (x.cost === 0) return "nothing. Your free amulets cover it";
+      const parts = x.buys.map((n, i) => (n ? `${n}× ${x.names[i]}` : null)).filter(Boolean);
+      return `<b>${usd(x.cost)}</b> = ${parts.join(" + ")} (${fmt(x.amulets)} amulets)`;
+    };
+    $("buys").innerHTML = `Cheapest packs for a median run: ${describe(r.st.p50)}<br>For an unlucky (90th percentile) run: ${describe(r.st.p90)}`;
+  }
+
+  function renderWarnings(r, pricer, owned, dollarsPerAmulet) {
+    const w = [];
+    if (r.infeasible > 0) {
+      w.push(`${fmt((r.infeasible / r.spent.length) * 100, 1)}% of runs need more than the ${fmt(pricer.maxPurchasable)} amulets you can still buy with the daily limits.
+        Tick "Ignore pack daily limits" to see the cost anyway (≈ ${usd(Math.max(0, r.st.mean - owned) * dollarsPerAmulet)} on average at the best pack rate).`);
+    }
+    $("warnings").innerHTML = w.map((t) => `<div class="warn">${t}</div>`).join("");
+  }
+
+  function renderHist(costs, cStats, allFeasible) {
+    const vals = Array.from(costs).filter(isFinite);
+    const el = $("hist");
+    if (!vals.length || cStats.p95 === 0) { el.innerHTML = '<p class="note">No spending needed in most runs.</p>'; return; }
+    const W = 640, H = 200, pad = { l: 40, r: 10, t: 10, b: 28 };
+    const lo = Math.min(...vals), hi = Math.max(...vals);
+    const bins = Math.min(40, Math.max(8, new Set(vals).size));
+    const width = (hi - lo) / bins || 1;
+    const counts = new Array(bins).fill(0);
+    vals.forEach((v) => counts[Math.min(bins - 1, Math.floor((v - lo) / width))]++);
+    const maxC = Math.max(...counts);
+    const x = (v) => pad.l + ((v - lo) / (width * bins)) * (W - pad.l - pad.r);
+    const y = (c) => H - pad.b - (c / maxC) * (H - pad.t - pad.b);
+    let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Histogram of spend per run">`;
+    counts.forEach((c, i) => {
+      const x0 = x(lo + i * width), x1 = x(lo + (i + 1) * width);
+      s += `<rect x="${x0 + 1}" y="${y(c)}" width="${Math.max(1, x1 - x0 - 2)}" height="${H - pad.b - y(c)}" fill="var(--bar)" rx="2"><title>${usd(lo + i * width)}–${usd(lo + (i + 1) * width)}: ${c} runs</title></rect>`;
+    });
+    const mark = (v, dash) => isFinite(v) && v >= lo && v <= hi ? `<line x1="${x(v)}" x2="${x(v)}" y1="${pad.t}" y2="${H - pad.b}" stroke="var(--bar-hi)" stroke-width="2" ${dash ? 'stroke-dasharray="5 4"' : ""}/>` : "";
+    if (allFeasible) s += mark(cStats.mean, false);
+    s += mark(cStats.p90, true);
+    s += `<line x1="${pad.l}" x2="${W - pad.r}" y1="${H - pad.b}" y2="${H - pad.b}" stroke="var(--line)"/>`;
+    for (let i = 0; i <= 4; i++) {
+      const v = lo + (i / 4) * (hi - lo);
+      s += `<text x="${x(v)}" y="${H - 8}" text-anchor="middle">$${fmt(v)}</text>`;
+    }
+    s += `<text x="${pad.l - 6}" y="${pad.t + 10}" text-anchor="end">${maxC}</text></svg>`;
+    el.innerHTML = s;
+  }
+
+  function renderBudget(r, bought, total, have, auto, label) {
+    const parts = (bought.buys || []).map((n, i) => (n ? `${n}× ${bought.names[i]}` : null)).filter(Boolean);
+    const st = r.bst;
+    $("budgetOut").innerHTML =
+      `<p class="note">Buys <b>${fmt(bought.amulets || 0)}</b> amulets for ${usd(bought.cost || 0)}${parts.length ? " (" + parts.join(" + ") + ")" : ""}.
+        With your free amulets that's <b>${fmt(total)}</b> to spend. ${auto ? "Best" : "Using"}: claim at <b>${label(r.c)}</b>.</p>
+       <table><tbody>
+        <tr><td>Average tokens gained</td><td>${fmt(st.mean)}</td></tr>
+        <tr><td>Unlucky (10th pct)</td><td>${fmt(st.p10)}</td></tr>
+        <tr><td>Median</td><td>${fmt(st.p50)}</td></tr>
+        <tr><td>Lucky (90th pct)</td><td>${fmt(st.p90)}</td></tr>
+        <tr><td>Average total after</td><td>${fmt(have + st.mean)}</td></tr>
+        <tr><td>Chance to reach target</td><td>${fmt(r.hit * 100, 1)}%</td></tr>
+       </tbody></table>`;
+  }
+
+  function renderStrategy(rows, rates, best, label, budget) {
+    const cell = (v, isBest) => `<td class="${isBest ? "best" : ""}">${v}</td>`;
+    $("strategy").innerHTML =
+      `<thead><tr><th>Claim at</th><th>Avg amulets to target</th><th>Avg spend</th><th>90% spend</th><th>Tokens from $${fmt(budget)}</th><th>Long run tokens / amulet</th></tr></thead><tbody>` +
+      rows.map((r) => `<tr class="${r === best.chosen ? "chosen" : ""}"><td>${label(r.c)}</td>` +
+        cell(fmt(r.st.mean), r === best.bestTarget) +
+        cell(r.infeasible ? "—" : usd(r.cst.mean), r === best.bestTarget) +
+        cell(usd(r.cst.p90), false) +
+        cell(fmt(r.bst.mean), r === best.bestBudget) +
+        cell(fmt(rates[r.c], 1), r === best.bestLong) + "</tr>").join("") + "</tbody>";
+  }
+
+  // ---------- wiring ----------
+  let timer = null;
+  function schedule() { clearTimeout(timer); timer = setTimeout(run, 250); }
+  INPUT_IDS.forEach((id) => $(id).addEventListener(id === "budget" ? "input" : "change", schedule));
+  $("run").addEventListener("click", run);
+  $("reset").addEventListener("click", () => {
+    try { localStorage.removeItem(STORE); } catch (e) { /* ignore */ }
+    location.reload();
+  });
+
+  renderDataTables();
+  run();
+})();
+</script>
+</body>
+</html>
