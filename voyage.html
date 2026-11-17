@@ -195,6 +195,13 @@
   .own.show { display: block; }
   .tag { display: inline-block; font-size: 10.5px; font-weight: 500; padding: 1px 8px; border-radius: 999px; background: var(--p-lav); color: var(--ink); margin-left: 6px; }
   .event-note { font-size: 12px; color: var(--muted); }
+  .credits {
+    margin: 22px auto 2px; width: fit-content; padding: 8px 18px; border-radius: 999px;
+    background: var(--panel); border: 1px solid var(--panel-line); font-size: 12.5px; color: var(--muted);
+  }
+  .credits a { color: var(--ink); font-weight: 600; text-decoration: none; }
+  .credits a:hover { text-decoration: underline; text-underline-offset: 2px; }
+  .credits .heart { color: var(--c-majestic); }
   .prio { background: var(--pill); border-radius: 18px; padding: 12px 14px; margin: 6px 0 4px; }
   .prio-head { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
   .prio-head button { padding: 4px 12px; font-size: 11.5px; }
@@ -343,6 +350,8 @@
       </section>
     </div>
   </div>
+
+  <footer class="credits">made with love by <a href="https://mirakingshot.github.io/" target="_blank" rel="noopener">Mira [221330479]</a></footer>
 </main>
 
 <script src="voyage.js"></script>
