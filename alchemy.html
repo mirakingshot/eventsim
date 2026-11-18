@@ -414,7 +414,7 @@
   const num = (id, lo, hi) => { let v = parseFloat($(id).value); if (!isFinite(v)) v = lo; return Math.min(hi, Math.max(lo, Math.floor(v))); };
   const user = () => ({ missionsPerDay: cfg.missionMaxPerDay, popup: state.popup, bought: state.bought });
   const luck = () => LUCK.find((l) => l.key === state.luck) || LUCK[1];
-  const packName = (p) => `${fmt(p.brews)} Brews pack`;
+  const packName = (p) => p.name || `${fmt(p.brews)} Brews pack`;
   const msLabel = (m) => `${fmt(m.qty)} ${m.item === "Truegold" ? "TG" : m.item}`;
 
   // ---------- steppers ----------
@@ -450,7 +450,7 @@
     cfg.packs.forEach((p) => {
       const lim = AJ.packLimit(cfg, p), n = state.bought[p.key] || 0;
       const row = document.createElement("div"); row.className = "pack";
-      row.innerHTML = `<div>${packName(p)} <small>${usd(p.priceUSD)} · up to ${lim} (1 a day)</small></div>`;
+      row.innerHTML = `<div>${packName(p)} <small>${usd(p.priceUSD)} · ${fmt(p.brews)} brews · up to ${lim} (1 a day)</small></div>`;
       row.appendChild(stepper(n, lim, packName(p), (v) => { state.bought[p.key] = v; renderPacks(); update(); }));
       box.appendChild(row);
     });

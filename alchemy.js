@@ -47,11 +47,11 @@
     ],
     // Daily packs: each can be bought once a day.
     packs: [
-      { key: "p1", priceUSD: 0.99, brews: 10, perDay: 1 },
-      { key: "p3", priceUSD: 2.99, brews: 30, perDay: 1 },
-      { key: "p5", priceUSD: 4.99, brews: 50, perDay: 1 },
-      { key: "p10", priceUSD: 9.99, brews: 95, perDay: 1 },
-      { key: "p20", priceUSD: 19.99, brews: 185, perDay: 1 },
+      { key: "p1", name: "Magic Brew Pack 1", priceUSD: 0.99, brews: 10, perDay: 1 },
+      { key: "p3", name: "Magic Brew Pack 2", priceUSD: 2.99, brews: 30, perDay: 1 },
+      { key: "p5", name: "Magic Brew Pack 3", priceUSD: 4.99, brews: 50, perDay: 1 },
+      { key: "p10", name: "Magic Brew Pack 4", priceUSD: 9.99, brews: 95, perDay: 1 },
+      { key: "p20", name: "Magic Brew Pack 5", priceUSD: 19.99, brews: 185, perDay: 1 },
     ],
     // Rewards for total brews used.
     milestones: [
