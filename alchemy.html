@@ -212,6 +212,8 @@
   .tag { display: inline-block; font-size: 11px; font-weight: 500; padding: 2px 10px; border-radius: 6px; background: var(--p-blue); color: var(--p-blue-ink); margin-left: 6px; vertical-align: middle; }
   .sub-head .tag { margin-left: 0; font-size: 12px; padding: 3px 12px; }
 
+  .start-here { display: inline-flex; align-items: center; gap: 6px; margin: -4px 0 10px; padding: 3px 12px 3px 10px; border-radius: 999px; background: var(--ev-soft); color: var(--ev-ink); font-size: 12px; font-weight: 600; }
+  .start-here::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ev); }
   .credits { margin: 26px auto 0; width: fit-content; padding: 8px 16px; border-radius: 10px; font-size: 12.5px; color: var(--muted); }
   .credits a { color: var(--accent); font-weight: 600; text-decoration: none; }
   .credits a:hover { text-decoration: underline; text-underline-offset: 2px; }
@@ -231,6 +233,8 @@
     border-radius: 12px; background: var(--pill); color: var(--ink); border: 1px solid var(--line); font-weight: 500;
   }
   .path-tile:hover { border-color: var(--accent); }
+  .path-tile.locked { cursor: default; opacity: 1; }
+  .path-tile.locked:hover { border-color: transparent; }
   .path-tile .pt-n { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--stone); color: var(--stone-ink); font-size: 14px; font-weight: 600; }
   .path-tile .pt-text { display: flex; flex-direction: column; min-width: 0; }
   .path-tile .pt-label { font-size: 13.5px; font-weight: 600; }
@@ -312,11 +316,12 @@
   <div class="grid">
     <div>
       <section class="panel">
+        <span class="start-here">start here 😊</span>
         <h2>Your Brews</h2>
         <div class="fixed-row"><div>Starting brews <small>Everyone starts with these</small></div><b id="startBrews"></b></div>
         <div class="fixed-row"><div>Daily missions <small>30 a day for 3 days, assumed done</small></div><b id="missionBrews"></b></div>
-        <h3>One-time pop-up</h3>
-        <div class="path-tiles" id="popupTiles" role="group" aria-label="Pop-up paths"></div>
+        <h3>Brewtiful Bonanza Path</h3>
+        <div class="path-tiles" id="popupTiles" role="group" aria-label="Brewtiful Bonanza Path"></div>
         <h3>Daily packs bought <span class="note" style="font-size:11px">· 1 of each a day</span></h3>
         <div id="packs"></div>
       </section>
@@ -431,16 +436,23 @@
     return st;
   }
 
+  // Free path is always claimed; a path counts only if every path before it is on.
+  function fixPopup() {
+    let ok = true;
+    cfg.popup.forEach((p) => { const v = p.priceUSD === 0 || (ok && !!state.popup[p.key]); state.popup[p.key] = v; ok = v; });
+  }
   function renderPopup() {
     const box = $("popupTiles"); box.innerHTML = "";
     cfg.popup.forEach((p, i) => {
-      const on = !!state.popup[p.key];
+      const on = !!state.popup[p.key], locked = p.priceUSD === 0;
       const b = document.createElement("button");
-      b.type = "button"; b.className = "path-tile" + (on ? " on" : "");
+      b.type = "button"; b.className = "path-tile" + (on ? " on" : "") + (locked ? " locked" : "");
       b.setAttribute("aria-pressed", String(on));
-      const extra = p.items.length ? ` + ${p.items.length} more items` : "";
+      if (locked) b.disabled = true;
+      const extra = (p.items.length ? ` + ${p.items.length} more items` : "") + (locked ? " · always claimed" : i > 1 ? ` · needs ${cfg.popup[i - 1].name}` : "");
       b.innerHTML = `<span class="pt-n">${on ? "✓" : i + 1}</span><span class="pt-text"><span class="pt-label">${p.name}</span><span class="pt-sub">${fmt(p.brews)} brews${extra}</span></span><span class="pt-cost">${p.priceUSD ? usd(p.priceUSD) : "Free"}</span>`;
-      b.onclick = () => { state.popup[p.key] = !on; renderPopup(); update(); };
+      // Paths unlock in order: turning one on turns on every path before it; turning one off turns off every path after it.
+      b.onclick = () => { cfg.popup.forEach((q, j) => { if (j < i || (j === i && !on)) state.popup[q.key] = true; else if (j >= i && on) state.popup[q.key] = q.priceUSD === 0; }); fixPopup(); renderPopup(); update(); };
       box.appendChild(b);
     });
   }
@@ -547,7 +559,7 @@
       kpi("Spend", usd(spend.usd), spend.usd ? [baseSpend.usd ? `${usd(baseSpend.usd)} bought` : "", buying ? `${usd(plan.buy.price)} for the goal` : ""].filter(Boolean).join(" + ") : "free to play");
     $("runTag").textContent = luck().label + " luck";
     $("brewBreak").textContent = `Brews: ${fmt(br.start)} to start + ${fmt(br.missions)} from missions (${cfg.missionMaxPerDay} a day × ${cfg.eventDays} days)` +
-      (br.popup ? ` + ${fmt(br.popup)} from the pop-up` : "") + (br.packs ? ` + ${fmt(br.packs)} from daily packs` : "") + ".";
+      (br.popup ? ` + ${fmt(br.popup)} from the Brewtiful Bonanza` : "") + (br.packs ? ` + ${fmt(br.packs)} from daily packs` : "") + ".";
 
     renderGoal(plan, baseSpend, spend);
     renderMilestones(used, pc, have);
@@ -573,7 +585,7 @@
 
   function buyLines(buy) {
     return buy.add.map((a) => {
-      const label = a.kind === "popup" ? `Pop-up: ${cfg.popup.find((x) => x.key === a.key).name}` : `${a.n}× ${packName(cfg.packs.find((x) => x.key === a.key))}`;
+      const label = a.kind === "popup" ? `Brewtiful Bonanza: ${cfg.popup.find((x) => x.key === a.key).name}` : `${a.n}× ${packName(cfg.packs.find((x) => x.key === a.key))}`;
       return `<li><span>${label}</span><span>${usd(a.price * a.n)}</span></li>`;
     }).join("");
   }
@@ -649,7 +661,7 @@
     ids.sort((a, b) => tot(b) - tot(a));
     const c = (v) => `<td>${v ? fmt(v) : "—"}</td>`;
     const worth = (id) => { const v = data.values[id]; return v ? usd(v.unit * tot(id)) : "—"; };
-    $("totalTbl").innerHTML = `<thead><tr><th>Item</th><th>Shop</th><th>Milestones</th><th>Pop-up</th><th>Total</th><th>Worth</th></tr></thead><tbody>` +
+    $("totalTbl").innerHTML = `<thead><tr><th>Item</th><th>Shop</th><th>Milestones</th><th>Bonanza</th><th>Total</th><th>Worth</th></tr></thead><tbody>` +
       (ids.length ? ids.map((id) => `<tr><td>${id}</td>${c(shop.get(id))}${c(ms.get(id))}${c(packs.get(id))}<td><b>${fmt(tot(id))}</b></td><td>${worth(id)}</td></tr>`).join("")
         : `<tr><td colspan="6" class="note">Nothing yet.</td></tr>`) + "</tbody>";
   }
@@ -683,6 +695,7 @@
   $("clearGoal2").addEventListener("click", clearGoal);
   $("reset").addEventListener("click", () => { try { localStorage.removeItem(STORE); } catch (e) { /* ignore */ } location.reload(); });
 
+  fixPopup();
   renderPopup();
   renderPacks();
   renderLuck();

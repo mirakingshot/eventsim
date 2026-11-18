@@ -175,7 +175,14 @@
   // Every mix of the packs still on sale, sorted by price (ties: more brews first).
   function packCombos(cfg, u) {
     const opts = [];
-    cfg.popup.forEach((p) => { if (p.priceUSD > 0 && !u.popup[p.key]) opts.push({ kind: "popup", key: p.key, max: 1, price: p.priceUSD, brews: p.brews }); });
+    // Bonanza paths unlock in order (Free, then $4.99, then $9.99), so the unbought ones are one chain:
+    // taking n of them means the next n in order.
+    const steps = cfg.popup.filter((p) => p.priceUSD > 0 && !u.popup[p.key]);
+    if (steps.length) {
+      const cum = [{ price: 0, brews: 0 }];
+      steps.forEach((p, i) => cum.push({ price: cum[i].price + p.priceUSD, brews: cum[i].brews + p.brews }));
+      opts.push({ kind: "chain", steps, cum, max: steps.length });
+    }
     cfg.packs.forEach((p) => {
       const left = packLimit(cfg, p) - (u.bought[p.key] || 0);
       if (left > 0) opts.push({ kind: "pack", key: p.key, max: left, price: p.priceUSD, brews: p.brews });
@@ -184,7 +191,12 @@
     const counts = new Array(opts.length).fill(0);
     (function walk(i, price, b) {
       if (i === opts.length) { out.push({ price: Math.round(price * 100) / 100, brews: b, counts: counts.slice() }); return; }
-      for (let n = 0; n <= opts[i].max; n++) { counts[i] = n; walk(i + 1, price + n * opts[i].price, b + n * opts[i].brews); }
+      for (let n = 0; n <= opts[i].max; n++) {
+        counts[i] = n;
+        const o = opts[i];
+        if (o.kind === "chain") walk(i + 1, price + o.cum[n].price, b + o.cum[n].brews);
+        else walk(i + 1, price + n * o.price, b + n * o.brews);
+      }
       counts[i] = 0;
     })(0, 0, 0);
     out.sort((a, b) => a.price - b.price || b.brews - a.brews);
@@ -196,7 +208,12 @@
     const c = pc.combos.find((x) => x.brews >= extra);
     if (!c) return null;
     const add = [];
-    c.counts.forEach((n, i) => { if (n > 0) add.push({ ...pc.opts[i], n }); });
+    c.counts.forEach((n, i) => {
+      if (n <= 0) return;
+      const o = pc.opts[i];
+      if (o.kind === "chain") o.steps.slice(0, n).forEach((p) => add.push({ kind: "popup", key: p.key, n: 1, price: p.priceUSD, brews: p.brews }));
+      else add.push({ ...o, n });
+    });
     return { price: c.price, brews: c.brews, add };
   }
   // Apply a plan to a user state.
