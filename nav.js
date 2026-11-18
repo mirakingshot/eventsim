@@ -21,6 +21,11 @@
         { href: "voyage.html?event=light", label: "Light", sub: "Hero Gear", params: { event: "light" }, isDefault: true },
       ],
     },
+    {
+      href: "alchemy.html", label: "Alchemy Junction", icon: "flask",
+      blurb: "Pick the shop items or brew milestone you want and see the cheapest packs to get there, with your luck.",
+      tags: ["Shop wishlist", "Milestones", "Pack planner"],
+    },
     // Hidden until its simulation is fixed (the page is still at fantasy-theater.html):
     // {
     //   href: "fantasy-theater.html", label: "Fantasy Theater", icon: "mask",
@@ -40,6 +45,7 @@
     home: '<path d="M4 11l8-7 8 7v8a1 1 0 01-1 1h-4v-6H9v6H5a1 1 0 01-1-1z"/>',
     ship: '<path d="M4 15l1.6 4.2a1 1 0 00.9.8h11a1 1 0 00.9-.8L20 15"/><path d="M3 15h18"/><path d="M12 3v12"/><path d="M12 4l6 9h-6"/><path d="M12 7l-4 6h4"/>',
     mask: '<path d="M4 5c3 1.3 5.3 1.3 8 0 2.7 1.3 5 1.3 8 0v6a8 8 0 01-16 0z"/><path d="M8.5 10.5h1.5M14 10.5h1.5"/><path d="M9 14.5c1.8 1.3 4.2 1.3 6 0"/>',
+    flask: '<path d="M9.5 3h5"/><path d="M10 3v6.2L5.2 17.4A2.4 2.4 0 007.3 21h9.4a2.4 2.4 0 002.1-3.6L14 9.2V3"/><path d="M7.4 14.5h9.2"/>',
     menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
     close: '<path d="M6 6l12 12M18 6L6 18"/>',
     out: '<path d="M14 5h5v5"/><path d="M19 5l-8 8"/><path d="M18 14v4a1 1 0 01-1 1H6a1 1 0 01-1-1V7a1 1 0 011-1h4"/>',

@@ -1,0 +1,696 @@
+<!doctype html>
+<html lang="en" data-event="alchemy">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alchemy Junction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Neutral palette: warm off-white, white cards, charcoal text, and a mix of amber / coral / green accents.
+     Each voyage has its own color (--ev), set from <html data-event="…">. Light only. */
+  :root {
+    color-scheme: light;
+    --shell: #fafaf8; --board: #f4f4f1; --panel: #ffffff; --panel-solid: #ffffff; --panel-line: #efeee9;
+    --white: #ffffff; --ink: #2b2b2e; --muted: #9a9a9f; --line: #ecebe6;
+    --amber: #f2a93b; --amber-soft: #fdf0dc; --amber-ink: #b26c0a;
+    --coral: #f06a6a; --coral-soft: #fde4e2; --coral-ink: #c43f3f;
+    --green: #74bd4f; --green-soft: #e8f5df; --green-ink: #4b8a2c;
+    --stone: #efeeea; --stone-ink: #6c6b70; --charcoal: #2b2b2e;
+    --ev: var(--amber); --ev-soft: var(--amber-soft); --ev-ink: var(--amber-ink);
+    /* role names kept from earlier themes */
+    --grad: var(--ev); --sage: transparent; --sage-dark: var(--charcoal);
+    --rose: var(--coral); --peach: var(--stone); --orange: var(--amber);
+    --purple: var(--ev); --lime: var(--green-soft); --lime-ink: var(--green-ink);
+    --navy: var(--ev); --navy-ink: #ffffff; --accent: var(--ev); --accent-ink: #ffffff; --accent-soft: var(--ev-soft);
+    --pill: #fbfbf9; --input: #ffffff; --select-bg: #ffffff;
+    --p-blue: var(--stone); --p-blue-ink: var(--stone-ink);
+    --p-lav: var(--stone); --p-pink: var(--coral-soft); --p-pink-ink: var(--coral-ink);
+    --p-peach: var(--amber-soft); --p-yellow-ink: var(--amber-ink);
+    --p-mint: var(--green-soft); --p-green-ink: var(--green-ink); --p-lav-ink: var(--stone-ink);
+    --warn-bg: var(--amber-soft); --warn-ink: #7a4a08; --ok: var(--green-ink);
+    --c-common: #9a9a9f; --c-premium: #4b8a2c; --c-exquisite: #d08a1c; --c-majestic: #d94e4e;
+    --shadow: 0 6px 24px rgba(60, 50, 30, .06);
+    --shadow-blue: 0 8px 18px rgba(60, 50, 30, .14);
+  }
+  :root[data-event="windward"] { --ev: var(--coral); --ev-soft: var(--coral-soft); --ev-ink: var(--coral-ink); }
+  :root[data-event="wavebound"] { --ev: var(--green); --ev-soft: var(--green-soft); --ev-ink: var(--green-ink); }
+  :root[data-event="light"] { --ev: var(--amber); --ev-soft: var(--amber-soft); --ev-ink: var(--amber-ink); }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; color: var(--ink); min-height: 100vh; background: var(--shell);
+    font: 14px/1.5 "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { padding: 0; position: relative; overflow-x: hidden; }
+  .contours { position: absolute; top: -30px; right: -60px; width: 640px; height: auto; pointer-events: none; opacity: .4; }
+  .page-head, .sub-head, .board { position: relative; }
+
+  /* page header — like "My Projects | 6 Running Projects" */
+  .page-head {
+    display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+    padding: 26px 32px 22px;
+  }
+  .page-title { display: flex; align-items: center; gap: 18px; margin-right: auto; }
+  .page-title h1 { font-size: 30px; font-weight: 500; letter-spacing: -.02em; margin: 0; line-height: 1.1; }
+  .page-title .count { padding-left: 18px; border-left: 1px solid var(--line); color: var(--muted); font-size: 13.5px; }
+  .page-title .count b { color: var(--accent); font-weight: 600; }
+
+  /* segmented switch — like "Board | List" */
+  .tabs { display: flex; gap: 2px; padding: 3px; border-radius: 12px; border: 1px solid var(--line); background: var(--white); flex-wrap: wrap; }
+  .tabs button {
+    background: transparent; color: var(--muted); border: 0; font-weight: 500; font-size: 13px;
+    padding: 8px 16px; border-radius: 9px; box-shadow: none;
+  }
+  .tabs button:hover { color: var(--ink); background: var(--pill); }
+  .tabs button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; box-shadow: var(--shadow-blue); }
+  .tabs button::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; vertical-align: 1px; background: var(--coral); }
+  .tabs button:nth-child(2)::before { background: var(--green); }
+  .tabs button:nth-child(3)::before { background: var(--amber); }
+  .tabs button[aria-pressed="true"]::before { background: #fff; }
+
+  /* sub header — like "Design Task ⌄" */
+  .sub-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 18px 32px 20px; }
+  .sub-head h2 { font-size: 21px; font-weight: 500; margin: 0; }
+  .sub-head .lede { flex-basis: 100%; color: var(--muted); margin: 0; max-width: 90ch; font-size: 13px; }
+
+  /* board — the soft grey area with white cards */
+  .board { background: var(--board); border-radius: 32px 0 0 0; padding: 26px 28px 28px; min-height: 60vh; }
+  @media (max-width: 900px) {
+    .page-head { padding: 18px 16px 16px; }
+    .page-title h1 { font-size: 24px; }
+    .sub-head { padding: 14px 16px 16px; }
+    .board { border-radius: 22px 22px 0 0; padding: 16px; }
+    .tabs { width: 100%; flex-direction: column; }
+    .tabs button { width: 100%; text-align: left; }
+  }
+
+  h2 { font-size: 17px; font-weight: 500; margin: 0 0 14px; letter-spacing: -.01em; }
+  h3 { font-size: 12px; margin: 18px 0 8px; color: var(--muted); font-weight: 500; }
+  .grid { display: grid; gap: 22px; grid-template-columns: 330px minmax(0, 1fr); align-items: start; }
+  @media (max-width: 1100px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+  .panel { background: var(--panel); border: 1px solid var(--panel-line); border-radius: 18px; padding: 20px; box-shadow: var(--shadow); }
+  .panel + .panel { margin-top: 22px; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+  .panel-head h2 { margin: 0; }
+  .pill-tag {
+    font-size: 11.5px; font-weight: 500; padding: 6px 14px; border-radius: 999px;
+    background: var(--lime); color: var(--lime-ink); white-space: nowrap;
+  }
+
+  label.field { display: grid; grid-template-columns: 1fr 156px; gap: 8px; align-items: center; margin: 10px 0; font-size: 13.5px; font-weight: 500; }
+  label.field small { display: block; color: var(--muted); font-size: 11.5px; font-weight: 400; grid-column: 1; grid-row: 2; margin-top: -8px; }
+  label.field > input, label.field > select { grid-column: 2; grid-row: 1 / span 2; }
+  #waysTbl td:nth-child(3) { white-space: nowrap; }
+  input, select {
+    font: inherit; font-size: 13.5px; color: var(--ink); background: var(--input);
+    border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; width: 100%; min-width: 0;
+  }
+  select { background-color: var(--select-bg); cursor: pointer; }
+  select option { background-color: var(--select-bg); color: var(--ink); }
+  input[type="checkbox"] { width: 18px; height: 18px; justify-self: end; accent-color: var(--accent); }
+  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  /* stat cards — soft colored cards, each a different color (like the currency cards) */
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+  .kpi { display: flex; flex-direction: column; padding: 14px 16px 12px; border-radius: 14px; background: var(--amber-soft); min-width: 0; }
+  .kpi:nth-child(2) { background: var(--coral-soft); }
+  .kpi:nth-child(3) { background: var(--stone); }
+  .kpi:nth-child(4) { background: var(--green-soft); }
+  .kpi .label { font-size: 11.5px; font-weight: 600; color: var(--amber-ink); }
+  .kpi:nth-child(2) .label { color: var(--coral-ink); }
+  .kpi:nth-child(3) .label { color: var(--stone-ink); }
+  .kpi:nth-child(4) .label { color: var(--green-ink); }
+  .kpi .value { font-size: 26px; font-weight: 600; letter-spacing: -.01em; line-height: 1.15; margin: 10px 0 10px; font-variant-numeric: tabular-nums; }
+  .kpi .sub { margin-top: auto; padding-top: 8px; border-top: 1px solid rgba(43, 43, 46, .08); font-size: 11px; color: var(--muted); line-height: 1.35; }
+
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 13.5px; }
+  th, td { text-align: right; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: 0; }
+  th:first-child, td:first-child { text-align: left; }
+  th { font-size: 12px; color: var(--muted); font-weight: 500; }
+  td.l, th.l { text-align: left; }
+  td.best { font-weight: 600; color: var(--c-premium); }
+  tr.chosen td { background: var(--accent-soft); }
+  tr.chosen td:first-child { font-weight: 600; border-radius: 10px 0 0 10px; }
+  tr.chosen td:last-child { border-radius: 0 10px 10px 0; }
+  tr.chosen td:first-child::after { content: " · using"; color: var(--muted); font-weight: 400; font-size: 11px; }
+  tr.reached td { color: var(--muted); }
+  tr.pickable { cursor: pointer; }
+  tr.pickable:hover td { background: var(--pill); }
+  tr.pickable:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  tr.goal td, tr.goal:hover td { background: var(--charcoal); color: #fff; }
+  tr.goal td .ok { color: #fff; }
+  .covered { display: inline-block; font-size: 11.5px; font-weight: 500; padding: 2px 10px; border-radius: 6px; background: var(--line); color: var(--muted); }
+  tr.goal td .covered { background: rgba(255, 255, 255, .16); color: #fff; }
+  tr.goal td:first-child { border-radius: 10px 0 0 10px; }
+  tr.goal td:last-child { border-radius: 0 10px 10px 0; }
+  tr.next td { background: var(--p-peach); }
+  tr.next td:first-child { border-radius: 10px 0 0 10px; }
+  tr.next td:last-child { border-radius: 0 10px 10px 0; }
+
+  /* goal box */
+  .goal-box { margin-top: 14px; border-radius: 14px; padding: 16px 18px; background: var(--pill); border: 1px solid var(--line); }
+  .goal-empty {
+    display: flex; align-items: center; gap: 12px; color: var(--ink); font-size: 13.5px; font-weight: 500;
+    margin: -16px -18px; padding: 14px 18px; border-radius: 14px; background: var(--peach);
+  }
+  .goal-empty::before {
+    content: "+"; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
+    background: var(--grad); color: var(--accent-ink); font-size: 18px; line-height: 1; flex: none;
+  }
+  .goal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+  .goal-kicker { font-size: 11px; color: var(--muted); font-weight: 500; }
+  .goal-title { font-size: 16px; font-weight: 600; }
+  .goal-head button { padding: 6px 14px; font-size: 12px; }
+  .buy-list { list-style: none; margin: 0; padding: 0; }
+  .buy-list li, .goal-total, .goal-sub { display: flex; justify-content: space-between; gap: 12px; font-variant-numeric: tabular-nums; }
+  .buy-list li { padding: 9px 12px; margin: 6px 0; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); font-size: 13.5px; font-weight: 500; }
+  .goal-total { margin-top: 10px; padding: 0 12px; font-size: 15px; align-items: baseline; }
+  .goal-total b { font-size: 22px; font-weight: 600; color: var(--rose); }
+  .goal-sub { padding: 0 12px; font-size: 12.5px; color: var(--muted); }
+  .goal-line { font-size: 13.5px; }
+
+  td input { width: 72px; text-align: right; padding: 5px 10px; border-radius: 8px; }
+  .table-wrap { overflow-x: auto; }
+  .warn { background: var(--warn-bg); color: var(--warn-ink); border-radius: 12px; padding: 10px 14px; font-size: 13px; margin-top: 12px; }
+  .note { color: var(--muted); font-size: 12.5px; margin-bottom: 0; }
+  .note a { color: var(--accent); text-decoration: none; font-weight: 500; }
+  .note a:hover { text-decoration: underline; }
+  .callout { background: var(--p-blue); color: var(--ink); border-radius: 12px; padding: 12px 16px; margin-bottom: 14px; font-size: 13.5px; }
+  button {
+    font: inherit; border: 0; border-radius: 10px; padding: 9px 18px; cursor: pointer;
+    background: var(--grad); color: #fff; font-weight: 500; font-size: 13px;
+    box-shadow: var(--shadow-blue);
+  }
+  button.ghost { background: var(--white); color: var(--ink); border: 1px solid var(--line); box-shadow: 0 3px 10px rgba(60, 50, 30, .06); border-radius: 999px; }
+  button.ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+  /* packs */
+  .stepper { display: flex; align-items: center; gap: 4px; justify-content: flex-end; }
+  .stepper button {
+    width: 30px; height: 30px; padding: 0; background: var(--panel); color: var(--ink);
+    border: 1px solid var(--line); font-size: 16px; border-radius: 8px; box-shadow: none;
+  }
+  .stepper button:not(:disabled):hover { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+  .stepper button:disabled { opacity: .35; cursor: default; }
+  .stepper span { width: 28px; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .pack {
+    display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; margin: 8px 0;
+    font-size: 13.5px; font-weight: 500; padding: 10px 10px 10px 14px; border-radius: 12px; background: var(--pill); border: 1px solid var(--line);
+  }
+  .pack small { display: block; color: var(--muted); font-size: 11.5px; font-weight: 400; }
+
+  .ok { color: var(--ok); font-weight: 600; }
+  .t-common { color: var(--c-common); font-weight: 600; }
+  .t-premium { color: var(--c-premium); font-weight: 600; }
+  .t-exquisite { color: var(--c-exquisite); font-weight: 600; }
+  .t-majestic { color: var(--c-majestic); font-weight: 600; }
+  .own { display: none; }
+  .own.show { display: block; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 500; padding: 2px 10px; border-radius: 6px; background: var(--p-blue); color: var(--p-blue-ink); margin-left: 6px; vertical-align: middle; }
+  .sub-head .tag { margin-left: 0; font-size: 12px; padding: 3px 12px; }
+
+  .credits { margin: 26px auto 0; width: fit-content; padding: 8px 16px; border-radius: 10px; font-size: 12.5px; color: var(--muted); }
+  .credits a { color: var(--accent); font-weight: 600; text-decoration: none; }
+  .credits a:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+  /* ---------- Alchemy Junction ---------- */
+  :root[data-event="alchemy"] { --ev: var(--green); --ev-soft: var(--green-soft); --ev-ink: var(--green-ink); }
+  .contours g { stroke: #bfe0a8; }
+  .fixed-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 8px 0; padding: 10px 14px; border-radius: 12px; background: var(--pill); border: 1px solid var(--line); font-size: 13.5px; font-weight: 500; }
+  .fixed-row small { display: block; color: var(--muted); font-size: 11.5px; font-weight: 400; }
+  .fixed-row b { font-variant-numeric: tabular-nums; }
+
+  /* pop-up path tiles: each one toggles on its own */
+  .path-tiles { display: flex; flex-direction: column; gap: 8px; }
+  .path-tile {
+    display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 12px;
+    width: 100%; padding: 9px 12px 9px 9px; text-align: left; box-shadow: none;
+    border-radius: 12px; background: var(--pill); color: var(--ink); border: 1px solid var(--line); font-weight: 500;
+  }
+  .path-tile:hover { border-color: var(--accent); }
+  .path-tile .pt-n { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--stone); color: var(--stone-ink); font-size: 14px; font-weight: 600; }
+  .path-tile .pt-text { display: flex; flex-direction: column; min-width: 0; }
+  .path-tile .pt-label { font-size: 13.5px; font-weight: 600; }
+  .path-tile .pt-sub { font-size: 11.5px; color: var(--muted); font-weight: 400; }
+  .path-tile .pt-cost { font-size: 12px; font-weight: 500; white-space: nowrap; padding: 3px 10px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .path-tile.on { background: var(--grad); color: #fff; border-color: transparent; box-shadow: var(--shadow-blue); }
+  .path-tile.on .pt-n { background: rgba(255, 255, 255, .22); color: inherit; }
+  .path-tile.on .pt-sub { color: inherit; opacity: .8; }
+  .path-tile.on .pt-cost { background: rgba(255, 255, 255, .18); border-color: transparent; color: inherit; }
+
+  /* jar dots in the levels table */
+  .jars { display: inline-flex; gap: 3px; vertical-align: middle; }
+  .jars i { width: 8px; height: 12px; border-radius: 3px 3px 4px 4px; background: var(--c, var(--stone-ink)); opacity: .85; }
+  .jars i:nth-child(6n+1) { --c: #74bd4f; } .jars i:nth-child(6n+2) { --c: #f2a93b; } .jars i:nth-child(6n+3) { --c: #f06a6a; }
+  .jars i:nth-child(6n+4) { --c: #b07ad8; } .jars i:nth-child(6n+5) { --c: #5b9bf0; } .jars i:nth-child(6n+6) { --c: #e0602f; }
+  .jars.same i { --c: #74bd4f !important; }
+  tr.goal .jars i { opacity: 1; }
+  .chance { display: inline-block; min-width: 48px; font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 6px; background: var(--stone); color: var(--stone-ink); text-align: center; }
+  .chance.hi { background: var(--green-soft); color: var(--green-ink); }
+  .chance.mid { background: var(--amber-soft); color: var(--amber-ink); }
+  .chance.lo { background: var(--coral-soft); color: var(--coral-ink); }
+  tr.goal .chance { background: rgba(255, 255, 255, .16); color: #fff; }
+  .more { margin-top: 10px; }
+  .luck-seg { display: flex; gap: 2px; padding: 3px; border-radius: 12px; border: 1px solid var(--line); background: var(--white); margin: 4px 0 6px; }
+  .luck-seg button { flex: 1; background: transparent; color: var(--muted); box-shadow: none; padding: 7px 4px; font-size: 12.5px; border-radius: 9px; }
+  .luck-seg button:hover { color: var(--ink); background: var(--pill); }
+  .luck-seg button[aria-pressed="true"] { background: var(--charcoal); color: #fff; font-weight: 600; }
+  tr.chosen-shop td { background: var(--accent-soft); }
+  tr.chosen-shop td:first-child { font-weight: 600; border-radius: 10px 0 0 10px; }
+  tr.chosen-shop td:last-child { border-radius: 0 10px 10px 0; }
+  /* shop wishlist tiles */
+  .cart-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .ctile {
+    --c: var(--stone-ink); --c-soft: var(--stone);
+    aspect-ratio: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;
+    padding: 8px 7px 7px; border-radius: 14px; background: var(--pill); border: 1px solid var(--line);
+  }
+  .ctile.c-amber { --c: var(--amber-ink); --c-soft: var(--amber-soft); }
+  .ctile.c-green { --c: var(--green-ink); --c-soft: var(--green-soft); }
+  .ctile.c-coral { --c: var(--coral-ink); --c-soft: var(--coral-soft); }
+  .ct-top { display: flex; justify-content: space-between; align-items: center; gap: 4px; }
+  .ct-max { font: inherit; font-size: 10.5px; font-weight: 600; white-space: nowrap; padding: 2px 8px; border-radius: 999px; background: var(--panel); color: var(--c); border: 1px solid var(--line); box-shadow: none; }
+  .ct-max:hover { border-color: var(--c); }
+  .ct-max[aria-pressed="true"] { background: var(--c); color: #fff; border-color: transparent; }
+  @media (min-width: 1101px) { .grid { grid-template-columns: 410px minmax(0, 1fr); } }
+  .kpis { grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); }
+  .ct-qty { flex: none; font-size: 11.5px; font-weight: 600; padding: 1px 8px; border-radius: 999px; background: var(--c-soft); color: var(--c); }
+  .ct-name { font-size: 11.5px; font-weight: 600; line-height: 1.25; margin-top: 3px; }
+  .ct-cost { font-size: 10.5px; color: var(--muted); margin-top: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ctile .stepper { justify-content: space-between; gap: 2px; }
+  .ctile .stepper button { width: 24px; height: 24px; font-size: 14px; border-radius: 7px; }
+  .ctile .stepper span { width: auto; flex: 1; font-size: 13px; }
+  .ctile.picked { background: var(--c-soft); border-color: var(--c); }
+  .ctile.picked .ct-qty { background: var(--c); color: #fff; }
+  @media (max-width: 420px) { .cart-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .cart-total { display: flex; justify-content: space-between; gap: 8px; margin: 6px 0 4px; padding: 0 4px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .cart-total span:last-child { color: var(--green-ink); }
+  #msGoal, #shopItem { margin-top: 2px; }
+</style>
+</head>
+<body>
+<main>
+  <svg class="contours" viewBox="0 0 600 260" aria-hidden="true"><g fill="none" stroke-width="1" transform="rotate(-14 470 30)"><ellipse cx="470" cy="30" rx="60" ry="34"/><ellipse cx="470" cy="30" rx="84" ry="49"/><ellipse cx="470" cy="30" rx="108" ry="64"/><ellipse cx="470" cy="30" rx="132" ry="79"/><ellipse cx="470" cy="30" rx="156" ry="94"/><ellipse cx="470" cy="30" rx="180" ry="109"/><ellipse cx="470" cy="30" rx="204" ry="124"/><ellipse cx="470" cy="30" rx="228" ry="139"/><ellipse cx="470" cy="30" rx="252" ry="154"/><ellipse cx="470" cy="30" rx="276" ry="169"/><ellipse cx="470" cy="30" rx="300" ry="184"/></g></svg>
+  <header class="page-head">
+    <div class="page-title">
+      <h1>Alchemy Junction</h1>
+      <span class="count">made for <b>#1584</b></span>
+    </div>
+  </header>
+
+  <div class="sub-head">
+    <h2>Jar guessing</h2>
+    <span class="tag">3-day event</span>
+    <p class="lede">Pick the shop items or brew milestone you want and see the cheapest packs to get there.
+      Every jar placed costs 1 brew and a wrong color can't be tried again in that slot, so luck decides how many brews each order takes.</p>
+  </div>
+
+  <div class="board">
+  <div class="grid">
+    <div>
+      <section class="panel">
+        <h2>Your Brews</h2>
+        <div class="fixed-row"><div>Starting brews <small>Everyone starts with these</small></div><b id="startBrews"></b></div>
+        <div class="fixed-row"><div>Daily missions <small>30 a day for 3 days, assumed done</small></div><b id="missionBrews"></b></div>
+        <h3>One-time pop-up</h3>
+        <div class="path-tiles" id="popupTiles" role="group" aria-label="Pop-up paths"></div>
+        <h3>Daily packs bought <span class="note" style="font-size:11px">· 1 of each a day</span></h3>
+        <div id="packs"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Your goal</h2>
+        <h3 style="margin-top:0">Shop items you want</h3>
+        <div id="cart" class="cart-grid"></div>
+        <div class="cart-total" id="cartTotal"></div>
+        <h3>Milestone you want</h3>
+        <select id="msGoal" aria-label="Milestone you want"></select>
+        <h3>Luck</h3>
+        <div class="luck-seg" id="luck" role="group" aria-label="Luck"></div>
+        <p class="note" id="luckNote" style="margin-top:4px"></p>
+        <h3>Leftover vouchers go on</h3>
+        <select id="shopItem" aria-label="Leftover vouchers go on"></select>
+        <p class="note" style="margin-top:6px">After your wishlist. Once that item hits its limit, the rest goes on the next-best items.</p>
+        <div class="row" style="margin-top:14px"><button type="button" class="ghost" id="clearGoal2">Clear goal</button></div>
+      </section>
+    </div>
+
+    <div>
+      <section class="panel">
+        <div class="panel-head"><h2>Your run</h2><span class="pill-tag" id="runTag"></span></div>
+        <div class="kpis" id="kpis"></div>
+        <div class="goal-box" id="goalBox" aria-live="polite"></div>
+        <p class="note" id="brewBreak"></p>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>Brew milestones</h2><span class="pill-tag" id="msTag"></span></div>
+        <div class="table-wrap"><table id="msTbl"></table></div>
+        <p class="note">Milestones count every brew you use. Tap one to make it your goal milestone; tap it again to clear.</p>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>Brewmaster Stall</h2><span class="pill-tag" id="shopTag"></span></div>
+        <div class="table-wrap"><table id="shopTbl"></table></div>
+        <p class="note" id="shopNote"></p>
+      </section>
+
+      <section class="panel">
+        <h2>What you get</h2>
+        <div class="table-wrap"><table id="totalTbl"></table></div>
+        <p class="note">"Worth" is what that many items cost in regular packs.</p>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>Price comparison</h2><span class="pill-tag" id="valueTag"></span></div>
+        <p class="note" style="margin:-6px 0 14px">What everything you get would cost if you bought it through regular packs instead.</p>
+        <div class="kpis" id="valueKpis"></div>
+        <div class="callout" id="goalValue" style="margin:14px 0 0"></div>
+        <h3>By item</h3>
+        <div class="table-wrap"><table id="valueTbl"></table></div>
+        <p class="note" id="valueNote"></p>
+        <div class="row" style="margin-top:12px"><button class="ghost" id="reset">Reset all to defaults</button></div>
+      </section>
+    </div>
+  </div>
+
+  <footer class="credits">made with love by <a href="https://mirakingshot.github.io/" target="_blank" rel="noopener">Mira [221330479]</a></footer>
+  </div>
+</main>
+
+<script src="nav.js"></script>
+<script src="alchemy.js"></script>
+<script>
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const cfg = AJ.DEFAULTS;
+  const fmt = (n, d) => (isFinite(n) ? n.toLocaleString(undefined, { maximumFractionDigits: d == null ? 0 : d }) : "—");
+  const usd = (n) => "$" + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const usdItem = (n) => (n >= 1 ? usd(n) : "$" + n.toFixed(4));
+  const STORE = "alchemy-calc-v2";
+  const LUCK = [
+    { key: "lucky", label: "Lucky", p: 0.25, note: "Brews it takes 1 in 4 players or fewer: better than most." },
+    { key: "typical", label: "Typical", p: 0.5, note: "Brews it takes half of players or fewer: the middle outcome." },
+    { key: "unlucky", label: "Unlucky", p: 0.75, note: "Brews that cover 3 in 4 players: plan with this to be fairly safe." },
+    { key: "worst", label: "Worst", p: 1, note: "Every guess wrong until the last color: you can never need more." },
+  ];
+
+  let state = { popup: { free: true }, bought: {}, luck: "typical", cart: {}, msGoal: null };
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORE) || "null");
+    if (saved) {
+      Object.assign(state, saved.state || {});
+      if (saved.inputs) for (const [k, v] of Object.entries(saved.inputs)) { const el = $(k); if (el) { el.value = v; el.dataset.saved = v; } }
+    }
+  } catch (e) { /* storage unavailable */ }
+  function save() {
+    try { localStorage.setItem(STORE, JSON.stringify({ state, inputs: { shopItem: $("shopItem").value } })); } catch (e) { /* ignore */ }
+  }
+
+  const num = (id, lo, hi) => { let v = parseFloat($(id).value); if (!isFinite(v)) v = lo; return Math.min(hi, Math.max(lo, Math.floor(v))); };
+  const user = () => ({ missionsPerDay: cfg.missionMaxPerDay, popup: state.popup, bought: state.bought });
+  const luck = () => LUCK.find((l) => l.key === state.luck) || LUCK[1];
+  const packName = (p) => `${fmt(p.brews)} Brews pack`;
+  const msLabel = (m) => `${fmt(m.qty)} ${m.item === "Truegold" ? "TG" : m.item}`;
+
+  // ---------- steppers ----------
+  function stepper(n, max, label, onSet) {
+    const st = document.createElement("div"); st.className = "stepper";
+    const minus = document.createElement("button"); minus.type = "button"; minus.textContent = "−"; minus.disabled = n <= 0;
+    minus.setAttribute("aria-label", "One fewer " + label);
+    const val = document.createElement("span"); val.textContent = n;
+    const plus = document.createElement("button"); plus.type = "button"; plus.textContent = "+"; plus.disabled = n >= max;
+    plus.setAttribute("aria-label", "One more " + label);
+    minus.onclick = () => onSet(Math.max(0, n - 1));
+    plus.onclick = () => onSet(Math.min(max, n + 1));
+    st.append(minus, val, plus);
+    return st;
+  }
+
+  function renderPopup() {
+    const box = $("popupTiles"); box.innerHTML = "";
+    cfg.popup.forEach((p, i) => {
+      const on = !!state.popup[p.key];
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "path-tile" + (on ? " on" : "");
+      b.setAttribute("aria-pressed", String(on));
+      const extra = p.items.length ? ` + ${p.items.length} more items` : "";
+      b.innerHTML = `<span class="pt-n">${on ? "✓" : i + 1}</span><span class="pt-text"><span class="pt-label">${p.name}</span><span class="pt-sub">${fmt(p.brews)} brews${extra}</span></span><span class="pt-cost">${p.priceUSD ? usd(p.priceUSD) : "Free"}</span>`;
+      b.onclick = () => { state.popup[p.key] = !on; renderPopup(); update(); };
+      box.appendChild(b);
+    });
+  }
+
+  function renderPacks() {
+    const box = $("packs"); box.innerHTML = "";
+    cfg.packs.forEach((p) => {
+      const lim = AJ.packLimit(cfg, p), n = state.bought[p.key] || 0;
+      const row = document.createElement("div"); row.className = "pack";
+      row.innerHTML = `<div>${packName(p)} <small>${usd(p.priceUSD)} · up to ${lim} (1 a day)</small></div>`;
+      row.appendChild(stepper(n, lim, packName(p), (v) => { state.bought[p.key] = v; renderPacks(); update(); }));
+      box.appendChild(row);
+    });
+  }
+
+  const tileColor = (item) => (/truegold/i.test(item) ? "amber" : /speed/i.test(item) ? "green" : /hero|forge/i.test(item) ? "coral" : "stone");
+  function renderCart() {
+    const box = $("cart"); box.innerHTML = "";
+    shopSorted().forEach((s) => {
+      const n = state.cart[s.item] || 0;
+      const row = document.createElement("div"); row.className = "ctile c-" + tileColor(s.item) + (n ? " picked" : "");
+      row.innerHTML = `<span class="ct-top"><span class="ct-qty">${fmt(s.qty)}×</span><button type="button" class="ct-max" aria-pressed="${n >= s.limit}" aria-label="Max ${s.item} (${fmt(s.limit)})" title="Buy the limit: ${fmt(s.limit)}">Max ${fmt(s.limit)}</button></span><span class="ct-name">${s.item}</span><span class="ct-cost" title="${fmt(s.tokens)} vouchers each">${fmt(s.tokens)} vouchers</span>`;
+      row.appendChild(stepper(n, s.limit, s.item, (v) => { state.cart[s.item] = v; renderCart(); update(); }));
+      row.querySelector(".ct-max").onclick = () => { state.cart[s.item] = n >= s.limit ? 0 : s.limit; renderCart(); update(); };
+      box.appendChild(row);
+    });
+  }
+
+  function fillMsGoal() {
+    $("msGoal").innerHTML = `<option value="">None</option>` +
+      cfg.milestones.map((m) => `<option value="${m.brews}">${fmt(m.brews)} brews · ${msLabel(m)}</option>`).join("");
+    $("msGoal").value = state.msGoal ? String(state.msGoal) : "";
+  }
+
+  function renderLuck() {
+    $("luck").innerHTML = "";
+    LUCK.forEach((l) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = l.label; b.setAttribute("aria-pressed", String(l.key === state.luck));
+      b.onclick = () => { state.luck = l.key; renderLuck(); update(); };
+      $("luck").appendChild(b);
+    });
+    $("luckNote").textContent = luck().note;
+  }
+
+  // ---------- data from the value guide ----------
+  const data = { values: AJ.VALUES_SNAPSHOT, shop: AJ.SHOP_SNAPSHOT, live: false, error: null };
+  const perVoucher = (s) => { const v = data.values[s.item]; return v ? (v.unit * s.qty) / s.tokens : 0; };
+  const shopSorted = () => data.shop.slice().sort((a, b) => perVoucher(b) - perVoucher(a));
+  function fillShop() {
+    const sel = $("shopItem"), prev = sel.value || sel.dataset.saved;
+    const list = shopSorted();
+    sel.innerHTML = list.map((s, i) => `<option value="${s.item}">${s.item}${i === 0 ? " (best value)" : ""}</option>`).join("");
+    if (list.some((s) => s.item === prev)) sel.value = prev;
+    renderCart();
+  }
+  async function loadData() {
+    try {
+      const [v, s] = await Promise.all([AJ.VALUES_URL, AJ.SHOPS_URL].map(async (u) => {
+        const r = await fetch(u); if (!r.ok) throw new Error("HTTP " + r.status); return r.text();
+      }));
+      const vm = AJ.parseValues(v), sh = AJ.parseShop(s);
+      if (!Object.keys(vm).length) throw new Error("empty sheet");
+      data.values = vm; if (sh.length) data.shop = sh; data.live = true;
+    } catch (e) { data.error = e.message || String(e); }
+    fillShop(); update();
+  }
+
+  // ---------- goal: wishlist and/or milestone ----------
+  function goalParts(p) {
+    const parts = [];
+    const v = AJ.cartVouchers(data.shop, state.cart);
+    if (v > 0) { const L = AJ.ordersForVouchers(v); parts.push({ kind: "cart", vouchers: v, orders: L, brews: AJ.brewsFor(L, p) }); }
+    const m = cfg.milestones.find((x) => x.brews === state.msGoal);
+    if (m) parts.push({ kind: "ms", m, brews: m.brews });
+    return parts;
+  }
+
+  // ---------- main ----------
+  function update() {
+    const base = user(), p = luck().p;
+    const have = AJ.brews(cfg, base).total;
+    const pc = AJ.packCombos(cfg, base);
+    const parts = goalParts(p);
+    let plan = null;
+    if (parts.length) {
+      const need = Math.max(...parts.map((x) => x.brews));
+      plan = { parts, need, short: need - have, buy: AJ.cheapest(pc, need - have) };
+    }
+    const buying = plan && plan.short > 0 && plan.buy;
+    const u = buying ? AJ.withPlan(base, plan.buy) : base;
+    const br = AJ.brews(cfg, u), spend = AJ.spendUSD(cfg, u), baseSpend = AJ.spendUSD(cfg, base);
+    const L = AJ.levelsCleared(br.total, p);
+    const vouchers = AJ.vouchersFor(L);
+    const used = br.total;
+    const msNext = cfg.milestones.find((m) => m.brews > used);
+    const msN = cfg.milestones.filter((m) => m.brews <= used).length;
+
+    const kpi = (l, v, sub) => `<div class="kpi"><div class="label">${l}</div><div class="value">${v}</div><div class="sub">${sub}</div></div>`;
+    $("kpis").innerHTML =
+      kpi("Magic Brews", fmt(br.total), buying ? `${fmt(have)} + ${fmt(plan.buy.brews)} from goal packs` : "all yours, before buying more") +
+      kpi("Vouchers", fmt(vouchers), `from ${fmt(L)} orders, ${luck().label.toLowerCase()} luck`) +
+      kpi("Milestones", `${msN} / ${cfg.milestones.length}`, msNext ? `next at ${fmt(msNext.brews)} brews` : "all reached") +
+      kpi("Spend", usd(spend.usd), spend.usd ? [baseSpend.usd ? `${usd(baseSpend.usd)} bought` : "", buying ? `${usd(plan.buy.price)} for the goal` : ""].filter(Boolean).join(" + ") : "free to play");
+    $("runTag").textContent = luck().label + " luck";
+    $("brewBreak").textContent = `Brews: ${fmt(br.start)} to start + ${fmt(br.missions)} from missions (${cfg.missionMaxPerDay} a day × ${cfg.eventDays} days)` +
+      (br.popup ? ` + ${fmt(br.popup)} from the pop-up` : "") + (br.packs ? ` + ${fmt(br.packs)} from daily packs` : "") + ".";
+
+    renderGoal(plan, baseSpend, spend);
+    renderMilestones(used, pc, have);
+    const shop = AJ.shopSpend(data.shop, vouchers, state.cart, $("shopItem").value, shopSorted());
+    renderShop(vouchers, shop);
+    const msItems = AJ.milestoneItems(cfg, used), popItems = AJ.packItems(cfg, u);
+    const items = mergeMaps(shop.items, msItems, popItems);
+    renderTotals(shop.items, msItems, popItems);
+    let goalCmp = null;
+    if (buying) {
+      const bL = AJ.levelsCleared(have, p);
+      const bItems = mergeMaps(AJ.shopSpend(data.shop, AJ.vouchersFor(bL), state.cart, $("shopItem").value, shopSorted()).items, AJ.milestoneItems(cfg, have), AJ.packItems(cfg, base));
+      goalCmp = { price: plan.buy.price, extra: AJ.valueItems(items, data.values).total - AJ.valueItems(bItems, data.values).total };
+    }
+    renderValue(items, spend, goalCmp);
+    save();
+  }
+  function mergeMaps(...ms) {
+    const out = new Map();
+    ms.forEach((m) => { for (const [k, v] of m) out.set(k, (out.get(k) || 0) + v); });
+    return out;
+  }
+
+  function buyLines(buy) {
+    return buy.add.map((a) => {
+      const label = a.kind === "popup" ? `Pop-up: ${cfg.popup.find((x) => x.key === a.key).name}` : `${a.n}× ${packName(cfg.packs.find((x) => x.key === a.key))}`;
+      return `<li><span>${label}</span><span>${usd(a.price * a.n)}</span></li>`;
+    }).join("");
+  }
+  function costCell(pc, have, need) {
+    if (need <= have) return `<span class="covered">Covered</span>`;
+    const b = AJ.cheapest(pc, need - have);
+    return b ? `<b>${usd(b.price)}</b>` : "Out of reach";
+  }
+
+  function renderGoal(plan, baseSpend, spend) {
+    const box = $("goalBox");
+    $("cartTotal").innerHTML = (() => {
+      const c = plan && plan.parts.find((x) => x.kind === "cart");
+      return c ? `<span>${fmt(c.vouchers)} vouchers</span><span>${fmt(c.orders)} orders · ${fmt(c.brews)} brews</span>` : `<span class="note" style="margin:0">Add items to plan for them.</span>`;
+    })();
+    if (!plan) { box.innerHTML = `<div class="goal-empty">Pick shop items or a milestone under Your goal to see the packs you need.</div>`; return; }
+    const why = plan.parts.map((x) => x.kind === "cart"
+      ? `<div class="goal-sub"><span>Wishlist: ${fmt(x.vouchers)} vouchers = ${fmt(x.orders)} orders</span><span>${fmt(x.brews)} brews</span></div>`
+      : `<div class="goal-sub"><span>Milestone: ${msLabel(x.m)}</span><span>${fmt(x.brews)} brews</span></div>`).join("");
+    const title = plan.parts.map((x) => (x.kind === "cart" ? "Shop wishlist" : `${fmt(x.brews)} brews milestone`)).join(" + ");
+    let body;
+    if (plan.short <= 0) body = `<div class="goal-line"><span class="ok">✓ Already covered</span> with your ${fmt(plan.need - plan.short)} brews. Nothing more to buy.</div>`;
+    else if (!plan.buy) body = `<div class="goal-line">Out of reach: you'd need ${fmt(plan.short)} more brews, more than every pack still on sale gives.</div>`;
+    else body = `<ul class="buy-list">${buyLines(plan.buy)}</ul>
+      <div class="goal-total"><span>To buy</span><b>${usd(plan.buy.price)}</b></div>
+      ${baseSpend.usd > 0 ? `<div class="goal-sub"><span>Already bought</span><span>${usd(baseSpend.usd)}</span></div><div class="goal-sub"><span>Total spend</span><span>${usd(spend.usd)}</span></div>` : ""}
+      <div class="note">You have ${fmt(plan.need - plan.short)} brews; these packs leave ${fmt(plan.buy.brews - plan.short)} spare.</div>`;
+    box.innerHTML = `<div class="goal-head"><div><div class="goal-kicker">Goal · needs ${fmt(plan.need)} brews</div><div class="goal-title">${title}</div></div><button class="ghost" type="button" id="clearGoal">Clear</button></div>` +
+      `<div style="margin:-4px 0 8px">${why}</div>${body}`;
+    $("clearGoal").onclick = clearGoal;
+  }
+  function clearGoal() { state.cart = {}; state.msGoal = null; fillMsGoal(); renderCart(); update(); }
+
+  function renderMilestones(used, pc, have) {
+    const tbl = $("msTbl"); tbl.innerHTML = `<thead><tr><th>Brews used</th><th class="l">Reward</th><th>Worth</th><th>Cost to reach</th></tr></thead>`;
+    const tb = tbl.createTBody();
+    let reached = 0;
+    const firstShort = cfg.milestones.findIndex((m) => used < m.brews);
+    cfg.milestones.forEach((m, i) => {
+      const tr = tb.insertRow();
+      const isGoal = state.msGoal === m.brews;
+      tr.className = "pickable" + (isGoal ? " goal" : used >= m.brews ? " reached" : i === firstShort && !state.msGoal ? " next" : "");
+      if (used >= m.brews) reached++;
+      tr.tabIndex = 0; tr.setAttribute("role", "button"); tr.setAttribute("aria-pressed", String(isGoal)); tr.setAttribute("aria-label", `Goal: ${m.brews} brews used`);
+      const pick = () => { state.msGoal = isGoal ? null : m.brews; fillMsGoal(); update(); };
+      tr.addEventListener("click", pick);
+      tr.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
+      const v = data.values[m.item];
+      tr.innerHTML = `<td>${fmt(m.brews)}</td><td class="l">${fmt(m.qty)}× ${m.item}</td><td>${v ? usd(v.unit * m.qty) : "—"}</td><td>${costCell(pc, have, m.brews)}</td>`;
+    });
+    $("msTag").textContent = `${reached} of ${cfg.milestones.length} reached`;
+  }
+
+  function renderShop(vouchers, shop) {
+    const chosen = $("shopItem").value;
+    $("shopTbl").innerHTML = `<thead><tr><th>Item</th><th>Vouchers</th><th>Qty</th><th>Limit</th><th>Worth</th><th>Per 1,000 vouchers</th><th>You buy</th></tr></thead><tbody>` +
+      shopSorted().map((s) => {
+        const v = data.values[s.item];
+        const n = shop.buys.filter((b) => b.item === s.item).reduce((a, b) => a + b.n, 0);
+        const want = state.cart[s.item] || 0;
+        return `<tr class="${want || s.item === chosen ? "chosen-shop" : ""}"><td>${s.item}${want ? '<span class="tag">wishlist</span>' : ""}</td><td>${fmt(s.tokens)}</td><td>${fmt(s.qty)}</td><td>${fmt(s.limit)}</td>` +
+          `<td>${v ? usd(v.unit * s.qty) : "—"}</td><td>${v ? `<b>${usd(perVoucher(s) * 1000)}</b>` : "—"}</td><td>${n ? `<b>${fmt(n)}×</b>${n >= s.limit ? ' <span class="covered">max</span>' : ""}` : "—"}</td></tr>`;
+      }).join("") + "</tbody>";
+    $("shopTag").textContent = `${fmt(vouchers)} vouchers`;
+    $("shopNote").innerHTML = (shop.short ? `<b>${fmt(shop.short)} wishlist purchase${shop.short > 1 ? "s" : ""} not covered</b> by your ${fmt(vouchers)} vouchers. ` : "") +
+      (shop.left ? `${fmt(shop.left)} vouchers left over. ` : "") +
+      `Ranked by regular-pack value per voucher. Shop items from <a href="${AJ.SHOP_PAGE}" target="_blank" rel="noopener">the value guide</a>.`;
+  }
+
+  function renderTotals(shop, ms, packs) {
+    const ids = [...new Set([...shop.keys(), ...ms.keys(), ...packs.keys()])];
+    const tot = (id) => (shop.get(id) || 0) + (ms.get(id) || 0) + (packs.get(id) || 0);
+    ids.sort((a, b) => tot(b) - tot(a));
+    const c = (v) => `<td>${v ? fmt(v) : "—"}</td>`;
+    const worth = (id) => { const v = data.values[id]; return v ? usd(v.unit * tot(id)) : "—"; };
+    $("totalTbl").innerHTML = `<thead><tr><th>Item</th><th>Shop</th><th>Milestones</th><th>Pop-up</th><th>Total</th><th>Worth</th></tr></thead><tbody>` +
+      (ids.length ? ids.map((id) => `<tr><td>${id}</td>${c(shop.get(id))}${c(ms.get(id))}${c(packs.get(id))}<td><b>${fmt(tot(id))}</b></td><td>${worth(id)}</td></tr>`).join("")
+        : `<tr><td colspan="6" class="note">Nothing yet.</td></tr>`) + "</tbody>";
+  }
+
+  function renderValue(items, spend, goalCmp) {
+    const v = AJ.valueItems(items, data.values);
+    const ratio = spend.usd > 0 ? v.total / spend.usd : null;
+    const kpi = (l, val, sub) => `<div class="kpi"><div class="label">${l}</div><div class="value">${val}</div><div class="sub">${sub}</div></div>`;
+    $("valueKpis").innerHTML =
+      kpi("Worth in regular packs", usd(v.total), "what these items cost in normal packs") +
+      kpi("You spend", usd(spend.usd), spend.usd > 0 ? "on brew packs" : "free to play") +
+      kpi("Value", ratio == null ? "Free" : `${fmt(ratio, 1)}×`, ratio == null ? "nothing spent" : ratio >= 1 ? `${usd(v.total - spend.usd)} more than you pay` : `${usd(spend.usd - v.total)} less than you pay`);
+    $("valueTag").textContent = data.live ? "Live prices" : "Saved prices";
+    $("goalValue").innerHTML = goalCmp ? `The goal's packs cost <b>${usd(goalCmp.price)}</b> and add items worth <b>${usd(goalCmp.extra)}</b> in regular packs` +
+      (goalCmp.price > 0 ? ` (${fmt(goalCmp.extra / goalCmp.price, 1)}× what you pay).` : ".") : "";
+    $("goalValue").style.display = goalCmp ? "" : "none";
+    $("valueTbl").innerHTML = `<thead><tr><th>Item</th><th>Qty</th><th>Regular price each</th><th>Worth</th></tr></thead><tbody>` +
+      (v.rows.length ? v.rows.map((r) => `<tr><td>${r.item}</td><td>${fmt(r.qty)}</td><td>${usdItem(r.unit)}</td><td><b>${usd(r.value)}</b></td></tr>`).join("")
+        : `<tr><td colspan="4" class="note">Nothing yet.</td></tr>`) + "</tbody>";
+    $("valueNote").innerHTML = (v.unpriced.length ? `Not priced on the masterlist, so not counted: ${v.unpriced.map((x) => `${fmt(x.qty)} ${x.item}`).join(", ")}. ` : "") +
+      `Magic Brews themselves aren't counted; their worth is the vouchers and milestones they earn. ` +
+      (data.live ? `Prices and shop load live from <a href="${AJ.VALUES_PAGE}" target="_blank" rel="noopener">Mira's KS Value Guide masterlist</a>.`
+        : `Couldn't load the live <a href="${AJ.VALUES_PAGE}" target="_blank" rel="noopener">masterlist</a>${data.error ? ` (${data.error})` : ""}, so these are the prices saved on 2026-11-17.`);
+  }
+
+  // ---------- wiring ----------
+  $("startBrews").textContent = fmt(cfg.startBrews);
+  $("missionBrews").textContent = fmt(cfg.missionMaxPerDay * cfg.eventDays);
+  $("shopItem").addEventListener("change", update);
+  $("msGoal").addEventListener("change", () => { state.msGoal = $("msGoal").value ? +$("msGoal").value : null; update(); });
+  $("clearGoal2").addEventListener("click", clearGoal);
+  $("reset").addEventListener("click", () => { try { localStorage.removeItem(STORE); } catch (e) { /* ignore */ } location.reload(); });
+
+  renderPopup();
+  renderPacks();
+  renderLuck();
+  fillMsGoal();
+  fillShop();
+  update();
+  loadData();
+})();
+</script>
+</body>
+</html>
