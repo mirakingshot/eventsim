@@ -294,6 +294,25 @@
   .cart-total span:last-child { color: var(--green-ink); }
   #msGoal, #shopItem { margin-top: 2px; }
 </style>
+<style>
+  /* left-column panels become an equal-width top row; results go full width below */
+  @media (min-width: 0px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+  .grid > div:first-child { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; align-items: stretch; }
+  .grid > div:first-child > .panel { margin-top: 0; }
+  /* cap content width so 4K screens don't stretch it */
+  .page-head, .sub-head { max-width: 1260px; box-sizing: border-box; }
+  .board > * { max-width: 1200px; }
+  /* What you get + Price comparison side by side */
+  .pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; align-items: stretch; margin-top: 22px; }
+  .pair > .panel { margin-top: 0; }
+  .pair .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  @media (max-width: 1250px) { .pair .kpis { grid-template-columns: minmax(0, 1fr); } }
+  @media (max-width: 900px) { .pair { grid-template-columns: minmax(0, 1fr); } }
+  /* shop tiles size to content (rectangles) instead of forced squares */
+  .ctile { aspect-ratio: auto; min-height: 112px; }
+  .ct-cost { margin-top: auto; padding-top: 6px; }
+  @media (max-width: 900px) { .grid > div:first-child { grid-template-columns: minmax(0, 1fr); } }
+</style>
 </head>
 <body>
 <main>
@@ -322,7 +341,7 @@
         <div class="fixed-row"><div>Daily missions <small>30 a day for 3 days, assumed done</small></div><b id="missionBrews"></b></div>
         <h3>Brewtiful Bonanza Path</h3>
         <div class="path-tiles" id="popupTiles" role="group" aria-label="Brewtiful Bonanza Path"></div>
-        <h3>Daily packs bought <span class="note" style="font-size:11px">· 1 of each a day</span></h3>
+        <h3>Daily packs ALREADY bought <span class="note" style="font-size:11px">· 1 of each a day</span></h3>
         <div id="packs"></div>
       </section>
 
@@ -363,6 +382,7 @@
         <p class="note" id="shopNote"></p>
       </section>
 
+      <div class="pair">
       <section class="panel">
         <h2>What you get</h2>
         <div class="table-wrap"><table id="totalTbl"></table></div>
@@ -379,6 +399,7 @@
         <p class="note" id="valueNote"></p>
         <div class="row" style="margin-top:12px"><button class="ghost" id="reset">Reset all to defaults</button></div>
       </section>
+      </div>
     </div>
   </div>
 

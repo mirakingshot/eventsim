@@ -20,12 +20,19 @@
     { slots: 5, vouchers: 4000 },
   ];
   const LATER = { slots: 6, vouchers: 5000 };
-  // Not confirmed yet: the 5th levels after level 7 (10, 15, ...). Assumed 6 slots and 5,000.
-  const LATER_FIFTH = { slots: 6, vouchers: 5000, same: true, assumed: true };
+  // Levels 10, 20, 30: 6 jars, all one color.
+  const LATER_TENTH = { slots: 6, vouchers: 5000, same: true };
+  // Levels 15, 25: 6 jars, one color in 3 slots and 3 other colors once each.
+  const LATER_MIXED = { slots: 6, vouchers: 5000, counts: [3, 1, 1, 1] };
+  // From level 31 on, every level (5ths included) has 6 different colors and pays 5,000.
+  const ALL_UNIQUE_FROM = 31;
 
   function level(n) {
-    const base = n <= EARLY.length ? EARLY[n - 1] : n % 5 === 0 ? LATER_FIFTH : LATER;
-    return { n, slots: base.slots, vouchers: base.vouchers, same: !!base.same || n % 5 === 0, assumed: !!base.assumed };
+    let base;
+    if (n <= EARLY.length) base = EARLY[n - 1];
+    else if (n >= ALL_UNIQUE_FROM || n % 5) base = LATER;
+    else base = n % 10 === 0 ? LATER_TENTH : LATER_MIXED;
+    return { n, slots: base.slots, vouchers: base.vouchers, same: !!base.same, counts: base.counts || null };
   }
 
   // ---------- event data ----------
@@ -112,12 +119,39 @@
   // Chance of each brew cost for one level: index = brews.
   function levelDist(lv) {
     if (lv.same) { const d = new Array(lv.slots + 1).fill(0); d[lv.slots] = 1; return d; }
+    if (lv.counts) return countsDist(lv.counts.slice().sort((a, b) => b - a), new Map());
     let d = [1];
     for (let k = 1; k <= lv.slots; k++) {
       const u = new Array(k + 1).fill(1 / k); u[0] = 0;
       d = convolve(d, u);
     }
     return d;
+  }
+  // Jars with repeated colors, filled slot by slot. In each slot you try the color with the most
+  // jars left first (ties in random order); a wrong color is ruled out for that slot.
+  // counts = jars left of each color, sorted high to low.
+  function countsDist(counts, memo) {
+    const total = counts.reduce((a, b) => a + b, 0);
+    if (!total) return [1];
+    const key = counts.join(",");
+    if (memo.has(key)) return memo.get(key);
+    let out = [0];
+    let pos = 1; // first guess position of the current tie group
+    for (let i = 0; i < counts.length;) {
+      let j = i; while (j < counts.length && counts[j] === counts[i]) j++;
+      const t = j - i, c = counts[i];
+      // The true color is in this group with chance t*c/total, at a random spot pos..pos+t-1.
+      const u = new Array(pos + t).fill(0);
+      for (let k = pos; k < pos + t; k++) u[k] = 1 / t;
+      const next = counts.slice(); next[i]--;
+      const rest = countsDist(next.filter((x) => x > 0).sort((a, b) => b - a), memo);
+      const part = convolve(u, rest), w = (t * c) / total;
+      if (part.length > out.length) out = out.concat(new Array(part.length - out.length).fill(0));
+      part.forEach((v, k) => (out[k] += v * w));
+      pos += t; i = j;
+    }
+    memo.set(key, out);
+    return out;
   }
   function convolve(a, b) {
     const out = new Array(a.length + b.length - 1).fill(0);
@@ -128,8 +162,8 @@
     return out;
   }
   const levelMin = (lv) => lv.slots;
-  const levelMax = (lv) => (lv.same ? lv.slots : (lv.slots * (lv.slots + 1)) / 2);
-  const levelAvg = (lv) => (lv.same ? lv.slots : (lv.slots * (lv.slots + 3)) / 4);
+  const levelMax = (lv) => levelDist(lv).length - 1;
+  const levelAvg = (lv) => levelDist(lv).reduce((a, v, i) => a + v * i, 0);
 
   // Cumulative cost to clear levels 1..L, as a running CDF. Built on demand and cached.
   const cum = [{ cdf: [1] }]; // cum[0]: clearing nothing costs 0
@@ -345,7 +379,7 @@
   }
 
   window.AJ = {
-    EARLY, LATER, LATER_FIFTH, DEFAULTS, SHOP_SNAPSHOT, level, packLimit,
+    EARLY, LATER, LATER_TENTH, LATER_MIXED, DEFAULTS, SHOP_SNAPSHOT, level, packLimit,
     brews, spendUSD, levelDist, levelMin, levelMax, levelAvg, chance, brewsFor, levelsCleared, vouchersFor,
     packCombos, cheapest, withPlan, shopSpend, shopLimit, cartVouchers, ordersForVouchers, milestoneItems, packItems,
     VALUES_URL, SHOPS_URL, VALUES_PAGE, SHOP_PAGE, VALUES_SNAPSHOT, parseValues, parseShop, valueItems,
