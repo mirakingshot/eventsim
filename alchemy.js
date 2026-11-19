@@ -38,7 +38,7 @@
   // ---------- event data ----------
   const DEFAULTS = {
     eventDays: 3,
-    startBrews: 28,
+    startBrews: 10,
     missionMaxPerDay: 30,
     // One-time pop-up with three paths. Paid paths also give the items listed.
     popup: [
