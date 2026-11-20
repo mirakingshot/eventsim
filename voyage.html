@@ -102,6 +102,31 @@
   label.field small { display: block; color: var(--muted); font-size: 11.5px; font-weight: 400; grid-column: 1; grid-row: 2; margin-top: -8px; }
   label.field > input, label.field > select { grid-column: 2; grid-row: 1 / span 2; }
   #waysTbl td:nth-child(3) { white-space: nowrap; }
+  /* chest contents editor */
+  .chest-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; margin: 10px 0; font-size: 13.5px; font-weight: 500; }
+  .chest-row small { display: block; color: var(--muted); font-size: 11.5px; font-weight: 400; }
+  .chest-row button { padding: 7px 18px; }
+  dialog.chest-dlg { border: 0; border-radius: 18px; padding: 0; width: min(720px, calc(100vw - 32px)); max-height: calc(100vh - 48px); background: var(--panel); color: var(--ink); box-shadow: 0 24px 60px rgba(40, 30, 10, .25); }
+  dialog.chest-dlg::backdrop { background: rgba(30, 28, 24, .35); }
+  .dlg-inner { padding: 22px; display: flex; flex-direction: column; gap: 14px; }
+  .dlg-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .dlg-head h2 { margin: 0 0 4px; }
+  .dlg-head p { margin: 0; color: var(--muted); font-size: 12.5px; }
+  .dlg-x { background: transparent; color: var(--muted); box-shadow: none; padding: 4px 10px; font-size: 20px; line-height: 1; }
+  .dlg-x:hover { color: var(--ink); }
+  .dlg-x:focus:not(:focus-visible) { outline: none; }
+  .dlg-preset { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; font-size: 13px; font-weight: 500; }
+  .chest-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 620px) { .chest-grid { grid-template-columns: minmax(0, 1fr); } }
+  .chest-card { border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; background: var(--white); }
+  .chest-card h3 { margin: 0 0 8px; color: var(--ink); font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .chest-card h3 img { width: 28px; height: 28px; object-fit: contain; flex: none; }
+  .chest-item { display: grid; grid-template-columns: 1fr 92px; gap: 8px; align-items: center; margin: 6px 0; font-size: 12.5px; }
+  .chest-item input { padding: 6px 10px; text-align: right; }
+  .chest-item input.changed { border-color: var(--accent); background: var(--accent-soft); }
+  .chest-item small { display: block; color: var(--muted); font-size: 11px; }
+  .dlg-foot { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .dlg-foot .right { display: flex; gap: 10px; }
   input, select {
     font: inherit; font-size: 13.5px; color: var(--ink); background: var(--input);
     border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; width: 100%; min-width: 0;
@@ -339,6 +364,10 @@
             <option value="2">20 Enhancement XP Parts</option>
             <option value="3">1 Mithril</option>
           </select></label>
+        <div class="field chest-row">
+          <div>Chest contents <small id="chestSrc"></small></div>
+          <button type="button" class="ghost" id="editChests">Edit</button>
+        </div>
         <label class="field" id="openMatRow">Open Materials Chests <small>Count their Satin, Threads and Vision</small><input id="openMat" type="checkbox" checked></label>
       </section>
     </div>
@@ -387,6 +416,24 @@
     </div>
   </div>
 
+  <dialog class="chest-dlg" id="chestDlg" aria-labelledby="chestDlgTitle">
+    <form method="dialog" class="dlg-inner" id="chestForm">
+      <div class="dlg-head">
+        <div><h2 id="chestDlgTitle">Chest contents</h2><p id="chestDlgSub"></p></div>
+        <button type="button" class="dlg-x" id="chestX" aria-label="Close">×</button>
+      </div>
+      <label class="dlg-preset">Fill from server age <select id="chestPreset"></select></label>
+      <div class="chest-grid" id="chestGrid"></div>
+      <div class="dlg-foot">
+        <button type="button" class="ghost" id="chestDefaults">Use defaults</button>
+        <div class="right">
+          <button type="button" class="ghost" id="chestCancel">Cancel</button>
+          <button type="submit" id="chestSave">Save</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
   <footer class="credits">made with love by <a href="https://mirakingshot.github.io/" target="_blank" rel="noopener">Mira [221330479]</a></footer>
   </div>
 </main>
@@ -406,8 +453,8 @@
   };
   const usd = (n) => "$" + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const STORE = "voyage-calc-v2";
-  // Rewards are for this server's age bracket (Day 155–224 in the game data).
-  const SERVER_DAY = 200;
+  // Rewards are for this server's age bracket (Day 225–322 in the game data).
+  const SERVER_DAY = 250;
   const INPUTS = ["teams", "banked", "way", "target", "ownC", "ownP", "pick", "openMat"];
 
   const events = clone(WV.EVENTS);
@@ -439,7 +486,18 @@
 
   const num = (id, lo, hi) => { let v = parseFloat($(id).value); if (!isFinite(v)) v = lo; return Math.min(hi, Math.max(lo, Math.floor(v))); };
   const ev = () => events.find((e) => e.key === state.event) || events[0];
-  const set = () => { const e = ev(); let s = e.sets[0]; for (const x of e.sets) if (x.fromDay <= SERVER_DAY) s = x; return s; };
+  const baseSet = () => { const e = ev(); let s = e.sets[0]; for (const x of e.sets) if (x.fromDay <= SERVER_DAY) s = x; return s; };
+  // Custom chest contents (per voyage), saved as state.chests[event][tier][itemId] = qty.
+  const customChests = () => (state.chests && state.chests[state.event]) || null;
+  const set = () => {
+    const s = baseSet(), cu = customChests();
+    if (!cu) return s;
+    const chests = {};
+    for (const [tier, list] of Object.entries(s.chests)) {
+      chests[tier] = list.map((it) => ({ id: it.id, qty: cu[tier] && cu[tier][it.id] != null ? cu[tier][it.id] : it.qty }));
+    }
+    return Object.assign({}, s, { chests });
+  };
   const userState = () => ({ teams: num("teams", 1, 4), banked: num("banked", 0, 1e5), bought: state.bought });
   const name = (id) => WV.itemName(id);
   const plural = (n, s) => (Math.round(n) === 1 ? s : (/(Chest|Shard|Part|Speedup|Design|Guide|Forgehammer|Vision)$/.test(s) ? s + "s" : s));
@@ -589,6 +647,7 @@
 
   // ---------- main update ----------
   function update() {
+    renderChestNote();
     const s = set(), base = userState();
     const tierList = s.milestones.map((m) => m.voyages);
     const plan = WV.milestonePlan(cfg, base, tierList);
@@ -847,6 +906,60 @@
     update();
   }));
   $("reset").addEventListener("click", () => { try { localStorage.removeItem(STORE); } catch (e) { /* ignore */ } location.reload(); });
+
+  // ---------- chest contents editor ----------
+  const TIER_NAMES = { common: "Common Chest", premium: "Premium Chest", exquisite: "Exquisite Chest", majestic: "Majestic Chest" };
+  const dayRange = (s) => `Day ${s.fromDay}${s.toDay ? `–${s.toDay}` : "+"}`;
+  function renderChestNote() {
+    $("chestSrc").textContent = customChests() ? "Custom amounts" : `Defaults for ${dayRange(baseSet())}`;
+  }
+  // Fill the editor's inputs from a set of chests (src[tier] = [{id, qty}]).
+  function fillChestInputs(src) {
+    const def = baseSet().chests;
+    $("chestGrid").innerHTML = WV.TIER_KEYS.filter((t) => src[t]).map((t) =>
+      `<div class="chest-card"><h3><img src="images/${t}.png" alt="" width="28" height="28">${TIER_NAMES[t]}</h3>` +
+      src[t].map((it) => {
+        const d = (def[t].find((x) => x.id === it.id) || {}).qty;
+        return `<label class="chest-item"><span>${name(it.id)}<small>default ${fmt(d)}</small></span>` +
+          `<input type="number" min="0" step="1" inputmode="numeric" data-tier="${t}" data-id="${it.id}" data-def="${d}" value="${it.qty}"></label>`;
+      }).join("") + `</div>`).join("");
+    markChanged();
+  }
+  function markChanged() {
+    $("chestGrid").querySelectorAll("input").forEach((i) => i.classList.toggle("changed", +i.value !== +i.dataset.def));
+  }
+  function openChests() {
+    const e = ev(), cur = baseSet();
+    $("chestDlgTitle").textContent = `${e.name} chest contents`;
+    $("chestDlgSub").textContent = `What one chest of each kind gives. Defaults are for ${dayRange(cur)}; change any amount to match your server.`;
+    $("chestPreset").innerHTML = `<option value="">Pick a server age…</option>` +
+      e.sets.map((s, i) => `<option value="${i}">${dayRange(s)}${s === cur ? " (default)" : ""}</option>`).join("");
+    fillChestInputs(set().chests);
+    $("chestDlg").showModal();
+  }
+  $("editChests").addEventListener("click", openChests);
+  $("chestGrid").addEventListener("input", markChanged);
+  $("chestPreset").addEventListener("change", () => {
+    const i = $("chestPreset").value;
+    if (i !== "") fillChestInputs(ev().sets[+i].chests);
+  });
+  $("chestDefaults").addEventListener("click", () => { $("chestPreset").value = ""; fillChestInputs(baseSet().chests); });
+  const closeChests = () => $("chestDlg").close();
+  $("chestX").addEventListener("click", closeChests);
+  $("chestCancel").addEventListener("click", closeChests);
+  $("chestDlg").addEventListener("click", (e) => { if (e.target === $("chestDlg")) closeChests(); }); // click outside
+  $("chestForm").addEventListener("submit", () => {
+    const cu = {}; let changed = false;
+    $("chestGrid").querySelectorAll("input").forEach((i) => {
+      let v = Math.floor(+i.value); if (!isFinite(v) || v < 0) v = 0;
+      (cu[i.dataset.tier] = cu[i.dataset.tier] || {})[i.dataset.id] = v;
+      if (v !== +i.dataset.def) changed = true;
+    });
+    state.chests = state.chests || {};
+    if (changed) state.chests[state.event] = cu; else delete state.chests[state.event];
+    sliderKey = "";
+    fillTargets(); update();
+  });
 
   renderTabs();
   renderTeams();
