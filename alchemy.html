@@ -373,7 +373,7 @@
       <section class="panel">
         <div class="panel-head"><h2>Brew milestones</h2><span class="pill-tag" id="msTag"></span></div>
         <div class="table-wrap"><table id="msTbl"></table></div>
-        <p class="note">Milestones count every brew you use. Tap one to make it your goal milestone; tap it again to clear.</p>
+        <p class="note">Brews only count toward milestones once the row of guesses they're in is submitted, so brews in a row you can't finish don't count yet. "Cost to reach" includes finishing the row that crosses the milestone. Tap one to make it your goal milestone; tap it again to clear.</p>
       </section>
 
       <section class="panel">
@@ -548,7 +548,7 @@
     const v = AJ.cartVouchers(data.shop, state.cart);
     if (v > 0) { const L = AJ.ordersForVouchers(v); parts.push({ kind: "cart", vouchers: v, orders: L, brews: AJ.brewsFor(L, p) }); }
     const m = cfg.milestones.find((x) => x.brews === state.msGoal);
-    if (m) parts.push({ kind: "ms", m, brews: m.brews });
+    if (m) parts.push({ kind: "ms", m, brews: AJ.brewsForMilestone(m.brews, p) });
     return parts;
   }
 
@@ -568,7 +568,8 @@
     const br = AJ.brews(cfg, u), spend = AJ.spendUSD(cfg, u), baseSpend = AJ.spendUSD(cfg, base);
     const L = AJ.levelsCleared(br.total, p);
     const vouchers = AJ.vouchersFor(L);
-    const used = br.total;
+    // Milestones only count brews from submitted rows (attempts).
+    const used = AJ.countedBrews(br.total, p);
     const msNext = cfg.milestones.find((m) => m.brews > used);
     const msN = cfg.milestones.filter((m) => m.brews <= used).length;
 
@@ -576,14 +577,14 @@
     $("kpis").innerHTML =
       kpi("Magic Brews", fmt(br.total), buying ? `${fmt(have)} + ${fmt(plan.buy.brews)} from goal packs` : "all yours, before buying more") +
       kpi("Vouchers", fmt(vouchers), `from ${fmt(L)} orders, ${luck().label.toLowerCase()} luck`) +
-      kpi("Milestones", `${msN} / ${cfg.milestones.length}`, msNext ? `next at ${fmt(msNext.brews)} brews` : "all reached") +
+      kpi("Milestones", `${msN} / ${cfg.milestones.length}`, msNext ? `${fmt(used)} counted · next at ${fmt(msNext.brews)}` : "all reached") +
       kpi("Spend", usd(spend.usd), spend.usd ? [baseSpend.usd ? `${usd(baseSpend.usd)} bought` : "", buying ? `${usd(plan.buy.price)} for the goal` : ""].filter(Boolean).join(" + ") : "free to play");
     $("runTag").textContent = luck().label + " luck";
     $("brewBreak").textContent = `Brews: ${fmt(br.start)} to start + ${fmt(br.missions)} from missions (${cfg.missionMaxPerDay} a day × ${cfg.eventDays} days)` +
       (br.popup ? ` + ${fmt(br.popup)} from the Brewtiful Bonanza` : "") + (br.packs ? ` + ${fmt(br.packs)} from daily packs` : "") + ".";
 
     renderGoal(plan, baseSpend, spend);
-    renderMilestones(used, pc, have);
+    renderMilestones(used, pc, have, p);
     const shop = AJ.shopSpend(data.shop, vouchers, state.cart, $("shopItem").value, shopSorted());
     renderShop(vouchers, shop);
     const msItems = AJ.milestoneItems(cfg, used), popItems = AJ.packItems(cfg, u);
@@ -592,7 +593,7 @@
     let goalCmp = null;
     if (buying) {
       const bL = AJ.levelsCleared(have, p);
-      const bItems = mergeMaps(AJ.shopSpend(data.shop, AJ.vouchersFor(bL), state.cart, $("shopItem").value, shopSorted()).items, AJ.milestoneItems(cfg, have), AJ.packItems(cfg, base));
+      const bItems = mergeMaps(AJ.shopSpend(data.shop, AJ.vouchersFor(bL), state.cart, $("shopItem").value, shopSorted()).items, AJ.milestoneItems(cfg, AJ.countedBrews(have, p)), AJ.packItems(cfg, base));
       goalCmp = { price: plan.buy.price, extra: AJ.valueItems(items, data.values).total - AJ.valueItems(bItems, data.values).total };
     }
     renderValue(items, spend, goalCmp);
@@ -640,7 +641,7 @@
   }
   function clearGoal() { state.cart = {}; state.msGoal = null; fillMsGoal(); renderCart(); update(); }
 
-  function renderMilestones(used, pc, have) {
+  function renderMilestones(used, pc, have, p) {
     const tbl = $("msTbl"); tbl.innerHTML = `<thead><tr><th>Brews used</th><th class="l">Reward</th><th>Worth</th><th>Cost to reach</th></tr></thead>`;
     const tb = tbl.createTBody();
     let reached = 0;
@@ -655,7 +656,7 @@
       tr.addEventListener("click", pick);
       tr.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
       const v = data.values[m.item];
-      tr.innerHTML = `<td>${fmt(m.brews)}</td><td class="l">${fmt(m.qty)}× ${m.item}</td><td>${v ? usd(v.unit * m.qty) : "—"}</td><td>${costCell(pc, have, m.brews)}</td>`;
+      tr.innerHTML = `<td>${fmt(m.brews)}</td><td class="l">${fmt(m.qty)}× ${m.item}</td><td>${v ? usd(v.unit * m.qty) : "—"}</td><td>${costCell(pc, have, AJ.brewsForMilestone(m.brews, p))}</td>`;
     });
     $("msTag").textContent = `${reached} of ${cfg.milestones.length} reached`;
   }

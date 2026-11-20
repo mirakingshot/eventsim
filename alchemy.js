@@ -199,6 +199,61 @@
     while (brewsFor(L + 1, p) <= B) L++;
     return L;
   }
+  // ---------- milestone progress ----------
+  // Brews only count toward milestones once the row (attempt) they're in is submitted.
+  // Each row guesses every slot that isn't solved yet, so a row costs one brew per unsolved slot.
+  // rowSizes(lv): expected brews in row 1, 2, 3... of a level (rounded), from the same
+  // slot-by-slot guessing model used for brew costs.
+  const rowMemo = new Map();
+  function rowSizes(lv) {
+    const counts = lv.same ? [lv.slots] : lv.counts ? lv.counts.slice() : new Array(lv.slots).fill(1);
+    const key = counts.join(",");
+    if (rowMemo.has(key)) return rowMemo.get(key);
+    const reach = new Array(lv.slots + 2).fill(0); // reach[r] = expected slots still unsolved at row r
+    (function walk(cnt, w) {
+      const total = cnt.reduce((a, b) => a + b, 0);
+      if (!total) return;
+      const order = cnt.map((c, i) => [c, i]).filter((x) => x[0] > 0).sort((a, b) => b[0] - a[0]);
+      let pos = 1;
+      for (let g = 0; g < order.length;) {
+        let h = g; while (h < order.length && order[h][0] === order[g][0]) h++;
+        const t = h - g;
+        for (let k = g; k < h; k++) {
+          const [c, i] = order[k], pw = (w * c) / total;
+          // The right color is tried at a random spot pos..pos+t-1; it's still unsolved in every row up to that spot.
+          for (let s = pos; s < pos + t; s++) for (let r = 1; r <= s; r++) reach[r] += pw / t;
+          const next = cnt.slice(); next[i]--;
+          walk(next, pw);
+        }
+        pos += t; g = h;
+      }
+    })(counts, 1);
+    const rows = [];
+    for (let r = 1; r < reach.length; r++) { const n = Math.round(reach[r]); if (n > 0) rows.push(n); }
+    rowMemo.set(key, rows);
+    return rows;
+  }
+  // Brews from submitted rows inside level n, given `room` brews to spend on it.
+  function rowsCounted(n, room, cap) {
+    let s = 0;
+    for (const r of rowSizes(level(n))) { if (s + r > room) break; s += r; }
+    return Math.min(s, cap);
+  }
+  // Milestone progress from B brews at luck p: finished orders plus submitted rows of the next one.
+  function countedBrews(B, p) {
+    const L = levelsCleared(B, p), cur = brewsFor(L, p);
+    return cur + rowsCounted(L + 1, B - cur, brewsFor(L + 1, p) - cur);
+  }
+  // Brews you need for milestone progress to reach `target` (you must submit the row that crosses it).
+  function brewsForMilestone(target, p) {
+    if (target <= 0) return 0;
+    let L = 0;
+    while (brewsFor(L + 1, p) < target) L++;
+    const cur = brewsFor(L, p), next = brewsFor(L + 1, p);
+    let s = cur;
+    for (const r of rowSizes(level(L + 1))) { s += r; if (s >= target) return Math.min(s, next); }
+    return next;
+  }
   function vouchersFor(L) {
     let v = 0;
     for (let n = 1; n <= L; n++) v += level(n).vouchers;
@@ -380,7 +435,7 @@
 
   window.AJ = {
     EARLY, LATER, LATER_TENTH, LATER_MIXED, DEFAULTS, SHOP_SNAPSHOT, level, packLimit,
-    brews, spendUSD, levelDist, levelMin, levelMax, levelAvg, chance, brewsFor, levelsCleared, vouchersFor,
+    brews, spendUSD, levelDist, levelMin, levelMax, levelAvg, chance, brewsFor, levelsCleared, countedBrews, brewsForMilestone, rowSizes, vouchersFor,
     packCombos, cheapest, withPlan, shopSpend, shopLimit, cartVouchers, ordersForVouchers, milestoneItems, packItems,
     VALUES_URL, SHOPS_URL, VALUES_PAGE, SHOP_PAGE, VALUES_SNAPSHOT, parseValues, parseShop, valueItems,
   };
