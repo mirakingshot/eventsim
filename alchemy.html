@@ -293,6 +293,12 @@
   .cart-total { display: flex; justify-content: space-between; gap: 8px; margin: 6px 0 4px; padding: 0 4px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
   .cart-total span:last-child { color: var(--green-ink); }
   #msGoal, #shopItem { margin-top: 2px; }
+  /* item icons (icons.js) */
+  .item-ic { width: 22px; height: 22px; object-fit: contain; vertical-align: middle; margin: -3px 8px -3px 0; }
+  .ci-name { display: flex; align-items: center; gap: 8px; }
+  .ci-name .item-ic { width: 26px; height: 26px; margin: 0; flex: none; }
+  .ct-name { display: flex; align-items: center; gap: 6px; }
+  .ct-ic { width: 26px; height: 26px; object-fit: contain; flex: none; }
 </style>
 <style>
   /* left-column panels become an equal-width top row; results go full width below */
@@ -408,6 +414,7 @@
 </main>
 
 <script src="nav.js"></script>
+<script src="icons.js"></script>
 <script src="alchemy.js"></script>
 <script>
 (function () {
@@ -495,7 +502,7 @@
     shopSorted().forEach((s) => {
       const n = state.cart[s.item] || 0;
       const row = document.createElement("div"); row.className = "ctile c-" + tileColor(s.item) + (n ? " picked" : "");
-      row.innerHTML = `<span class="ct-top"><span class="ct-qty">${fmt(s.qty)}×</span><button type="button" class="ct-max" aria-pressed="${n >= s.limit}" aria-label="Max ${s.item} (${fmt(s.limit)})" title="Buy the limit: ${fmt(s.limit)}">Max ${fmt(s.limit)}</button></span><span class="ct-name">${s.item}</span><span class="ct-cost" title="${fmt(s.tokens)} vouchers each">${fmt(s.tokens)} vouchers</span>`;
+      row.innerHTML = `<span class="ct-top"><span class="ct-qty">${fmt(s.qty)}×</span><button type="button" class="ct-max" aria-pressed="${n >= s.limit}" aria-label="Max ${s.item} (${fmt(s.limit)})" title="Buy the limit: ${fmt(s.limit)}">Max ${fmt(s.limit)}</button></span><span class="ct-name">${itemIcon(s.item, "ct-ic")}<span>${s.item}</span></span><span class="ct-cost" title="${fmt(s.tokens)} vouchers each">${fmt(s.tokens)} vouchers</span>`;
       row.appendChild(stepper(n, s.limit, s.item, (v) => { state.cart[s.item] = v; renderCart(); update(); }));
       row.querySelector(".ct-max").onclick = () => { state.cart[s.item] = n >= s.limit ? 0 : s.limit; renderCart(); update(); };
       box.appendChild(row);
@@ -656,7 +663,7 @@
       tr.addEventListener("click", pick);
       tr.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
       const v = data.values[m.item];
-      tr.innerHTML = `<td>${fmt(m.brews)}</td><td class="l">${fmt(m.qty)}× ${m.item}</td><td>${v ? usd(v.unit * m.qty) : "—"}</td><td>${costCell(pc, have, AJ.brewsForMilestone(m.brews, p))}</td>`;
+      tr.innerHTML = `<td>${fmt(m.brews)}</td><td class="l">${itemIcon(m.item)}${fmt(m.qty)}× ${m.item}</td><td>${v ? usd(v.unit * m.qty) : "—"}</td><td>${costCell(pc, have, AJ.brewsForMilestone(m.brews, p))}</td>`;
     });
     $("msTag").textContent = `${reached} of ${cfg.milestones.length} reached`;
   }
@@ -668,7 +675,7 @@
         const v = data.values[s.item];
         const n = shop.buys.filter((b) => b.item === s.item).reduce((a, b) => a + b.n, 0);
         const want = state.cart[s.item] || 0;
-        return `<tr class="${want || s.item === chosen ? "chosen-shop" : ""}"><td>${s.item}${want ? '<span class="tag">wishlist</span>' : ""}</td><td>${fmt(s.tokens)}</td><td>${fmt(s.qty)}</td><td>${fmt(s.limit)}</td>` +
+        return `<tr class="${want || s.item === chosen ? "chosen-shop" : ""}"><td>${itemIcon(s.item)}${s.item}${want ? '<span class="tag">wishlist</span>' : ""}</td><td>${fmt(s.tokens)}</td><td>${fmt(s.qty)}</td><td>${fmt(s.limit)}</td>` +
           `<td>${v ? usd(v.unit * s.qty) : "—"}</td><td>${v ? `<b>${usd(perVoucher(s) * 1000)}</b>` : "—"}</td><td>${n ? `<b>${fmt(n)}×</b>${n >= s.limit ? ' <span class="covered">max</span>' : ""}` : "—"}</td></tr>`;
       }).join("") + "</tbody>";
     $("shopTag").textContent = `${fmt(vouchers)} vouchers`;
@@ -684,7 +691,7 @@
     const c = (v) => `<td>${v ? fmt(v) : "—"}</td>`;
     const worth = (id) => { const v = data.values[id]; return v ? usd(v.unit * tot(id)) : "—"; };
     $("totalTbl").innerHTML = `<thead><tr><th>Item</th><th>Shop</th><th>Milestones</th><th>Bonanza</th><th>Total</th><th>Worth</th></tr></thead><tbody>` +
-      (ids.length ? ids.map((id) => `<tr><td>${id}</td>${c(shop.get(id))}${c(ms.get(id))}${c(packs.get(id))}<td><b>${fmt(tot(id))}</b></td><td>${worth(id)}</td></tr>`).join("")
+      (ids.length ? ids.map((id) => `<tr><td>${itemIcon(id)}${id}</td>${c(shop.get(id))}${c(ms.get(id))}${c(packs.get(id))}<td><b>${fmt(tot(id))}</b></td><td>${worth(id)}</td></tr>`).join("")
         : `<tr><td colspan="6" class="note">Nothing yet.</td></tr>`) + "</tbody>";
   }
 
@@ -701,7 +708,7 @@
       (goalCmp.price > 0 ? ` (${fmt(goalCmp.extra / goalCmp.price, 1)}× what you pay).` : ".") : "";
     $("goalValue").style.display = goalCmp ? "" : "none";
     $("valueTbl").innerHTML = `<thead><tr><th>Item</th><th>Qty</th><th>Regular price each</th><th>Worth</th></tr></thead><tbody>` +
-      (v.rows.length ? v.rows.map((r) => `<tr><td>${r.item}</td><td>${fmt(r.qty)}</td><td>${usdItem(r.unit)}</td><td><b>${usd(r.value)}</b></td></tr>`).join("")
+      (v.rows.length ? v.rows.map((r) => `<tr><td>${itemIcon(r.item)}${r.item}</td><td>${fmt(r.qty)}</td><td>${usdItem(r.unit)}</td><td><b>${usd(r.value)}</b></td></tr>`).join("")
         : `<tr><td colspan="4" class="note">Nothing yet.</td></tr>`) + "</tbody>";
     $("valueNote").innerHTML = (v.unpriced.length ? `Not priced on the masterlist, so not counted: ${v.unpriced.map((x) => `${fmt(x.qty)} ${x.item}`).join(", ")}. ` : "") +
       `Magic Brews themselves aren't counted; their worth is the vouchers and milestones they earn. ` +
