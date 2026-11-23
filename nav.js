@@ -41,6 +41,11 @@
     cta: "Open the guide",
   };
 
+  // External links in the sidebar (open in a new tab).
+  const LINKS = [
+    { href: "https://mirakingshot.github.io/", label: "My other projects", icon: "grid" },
+  ];
+
   const ICONS = {
     home: '<path d="M4 11l8-7 8 7v8a1 1 0 01-1 1h-4v-6H9v6H5a1 1 0 01-1-1z"/>',
     ship: '<path d="M4 15l1.6 4.2a1 1 0 00.9.8h11a1 1 0 00.9-.8L20 15"/><path d="M3 15h18"/><path d="M12 3v12"/><path d="M12 4l6 9h-6"/><path d="M12 7l-4 6h4"/>',
@@ -48,6 +53,7 @@
     flask: '<path d="M9.5 3h5"/><path d="M10 3v6.2L5.2 17.4A2.4 2.4 0 007.3 21h9.4a2.4 2.4 0 002.1-3.6L14 9.2V3"/><path d="M7.4 14.5h9.2"/>',
     menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
     close: '<path d="M6 6l12 12M18 6L6 18"/>',
+    grid: '<rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/>',
     out: '<path d="M14 5h5v5"/><path d="M19 5l-8 8"/><path d="M18 14v4a1 1 0 01-1 1H6a1 1 0 01-1-1V7a1 1 0 011-1h4"/>',
   };
   const svg = (k, cls) => `<svg class="${cls || "ksn-ico"}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[k]}</svg>`;
@@ -80,6 +86,7 @@
   .ksn-item { position: relative; }
   .ksn-item.on { background: var(--ksn-soft); color: var(--ksn-ink); font-weight: 600; }
   .ksn-item.on .ksn-ico { color: var(--ksn-accent); }
+  .ksn-ext .ksn-out { width: 13px; height: 13px; margin-left: auto; opacity: .55; stroke-width: 2.2; }
   .ksn-item.on::before { content: ""; position: absolute; left: -13px; top: 50%; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%; background: var(--ksn-accent); }
   .ksn-subs { list-style: none; margin: 2px 0 8px 23px; padding: 0 0 0 16px; border-left: 1.5px solid var(--ksn-line); }
   .ksn-subs a {
@@ -180,6 +187,8 @@
       <nav aria-label="Site">${itemHTML(HOME, cur)}</nav>
       <div class="ksn-label">Simulators</div>
       <nav aria-label="Simulators">${PAGES.map((p) => itemHTML(p, cur)).join("")}</nav>
+      <div class="ksn-label">More</div>
+      <nav aria-label="More">${LINKS.map((l) => `<a class="ksn-item ksn-ext" href="${l.href}" target="_blank" rel="noopener">${svg(l.icon)}${l.label}${svg("out", "ksn-ico ksn-out")}</a>`).join("")}</nav>
       <div class="ksn-spacer"></div>
       <a class="ksn-tile" href="${GUIDE.href}" target="_blank" rel="noopener">
         <div class="ksn-tile-kicker">${LOGO("ksnlg-tile")}Where values come from</div>
