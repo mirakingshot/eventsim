@@ -26,6 +26,11 @@
       blurb: "Pick the shop items or brew milestone you want and see the cheapest packs to get there, with your luck.",
       tags: ["Shop wishlist", "Milestones", "Pack planner"],
     },
+    {
+      href: "luckycabin.html", label: "Lucky Cabin", icon: "clover",
+      blurb: "Pick the Lucky Shop items you want and see the cheapest Lucky Packs to get there, with your wheel luck.",
+      tags: ["Shop wishlist", "Wheel odds", "Pack planner"],
+    },
     // Hidden until its simulation is fixed (the page is still at fantasy-theater.html):
     // {
     //   href: "fantasy-theater.html", label: "Fantasy Theater", icon: "mask",
@@ -51,6 +56,7 @@
     ship: '<path d="M4 15l1.6 4.2a1 1 0 00.9.8h11a1 1 0 00.9-.8L20 15"/><path d="M3 15h18"/><path d="M12 3v12"/><path d="M12 4l6 9h-6"/><path d="M12 7l-4 6h4"/>',
     mask: '<path d="M4 5c3 1.3 5.3 1.3 8 0 2.7 1.3 5 1.3 8 0v6a8 8 0 01-16 0z"/><path d="M8.5 10.5h1.5M14 10.5h1.5"/><path d="M9 14.5c1.8 1.3 4.2 1.3 6 0"/>',
     flask: '<path d="M9.5 3h5"/><path d="M10 3v6.2L5.2 17.4A2.4 2.4 0 007.3 21h9.4a2.4 2.4 0 002.1-3.6L14 9.2V3"/><path d="M7.4 14.5h9.2"/>',
+    clover: '<path d="M12 12c-1.8-2.6-5.5-3-5.5-5.4A2.6 2.6 0 0112 5.2a2.6 2.6 0 015.5 1.4C17.5 9 13.8 9.4 12 12z"/><path d="M12 12c1.8 2.6 5.5 3 5.5 5.4a2.6 2.6 0 01-5.5 1.4 2.6 2.6 0 01-5.5-1.4C6.5 15 10.2 14.6 12 12z" transform="rotate(90 12 12)"/><path d="M12 12l2.5 8"/>',
     menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
     close: '<path d="M6 6l12 12M18 6L6 18"/>',
     grid: '<rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/>',
