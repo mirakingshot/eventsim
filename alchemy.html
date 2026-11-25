@@ -266,6 +266,33 @@
   tr.chosen-shop td:first-child { font-weight: 600; border-radius: 10px 0 0 10px; }
   tr.chosen-shop td:last-child { border-radius: 0 10px 10px 0; }
   /* shop wishlist tiles */
+  /* Best value rankings: pill that opens a small ranked list on hover (or tap/focus) */
+  .rank-wrap { position: relative; }
+  button.rank-pill {
+    font-size: 11.5px; font-weight: 500; padding: 6px 14px; border-radius: 999px; white-space: nowrap;
+    background: var(--amber-soft); color: var(--amber-ink); border: 0; box-shadow: none; cursor: default;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .rank-i { width: 13px; height: 13px; flex: none; }
+  .rank-pop {
+    position: absolute; right: 0; top: 100%; z-index: 30; padding-top: 8px; width: 320px; max-width: calc(100vw - 32px);
+    visibility: hidden; opacity: 0; transform: translateY(-4px); transition: opacity .15s, transform .15s, visibility .15s;
+  }
+  .rank-wrap:hover .rank-pop, .rank-wrap:focus-within .rank-pop { visibility: visible; opacity: 1; transform: none; }
+  .rank-card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-blue); padding: 12px 14px; }
+  .rank-title { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+  .rank-list { list-style: none; margin: 0; padding: 0; max-height: 320px; overflow-y: auto; counter-reset: rank; }
+  .rank-list li { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 12.5px; border-top: 1px solid var(--panel-line); counter-increment: rank; }
+  .rank-list li:first-child { border-top: 0; }
+  .rank-list li::before { content: counter(rank); width: 18px; flex: none; color: var(--muted); font-size: 11px; text-align: right; }
+  .rank-list li.unpriced::before { content: "–"; }
+  .rank-list .item-ic { width: 20px; height: 20px; margin: 0; flex: none; }
+  .rank-list .rk-name { flex: 1; min-width: 0; }
+  .rank-list .rk-val { font-weight: 600; white-space: nowrap; }
+  .rank-list li.unpriced { color: var(--muted); }
+  .rank-list li.unpriced .rk-val { font-weight: 400; }
+  .rank-more { display: block; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 12.5px; font-weight: 600; color: var(--amber-ink); text-decoration: none; }
+  .rank-more:hover { text-decoration: underline; }
   .cart-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   .ctile {
     --c: var(--stone-ink); --c-soft: var(--stone);
@@ -352,7 +379,19 @@
       </section>
 
       <section class="panel">
-        <h2>Your goal</h2>
+        <div class="panel-head">
+          <h2>Your goal</h2>
+          <div class="rank-wrap">
+            <button type="button" class="rank-pill" aria-haspopup="true" aria-describedby="rankPop"><svg class="rank-i" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="8" cy="4.9" r="1" fill="currentColor"/><path d="M8 7.3v4.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Best value rankings</button>
+            <div class="rank-pop" id="rankPop" role="tooltip">
+              <div class="rank-card">
+                <div class="rank-title">Best value per 1,000 vouchers</div>
+                <ol id="rankList" class="rank-list"></ol>
+                <a class="rank-more" href="https://mirakingshot.github.io/ks-value-guide/recurring.html?e=Alchemy%20Junction" target="_blank" rel="noopener">See more at the Value Guide &rarr;</a>
+              </div>
+            </div>
+          </div>
+        </div>
         <h3 style="margin-top:0">Shop items you want</h3>
         <div id="cart" class="cart-grid"></div>
         <div class="cart-total" id="cartTotal"></div>
@@ -535,6 +574,11 @@
     const list = shopSorted();
     sel.innerHTML = list.map((s, i) => `<option value="${s.item}">${s.item}${i === 0 ? " (best value)" : ""}</option>`).join("");
     if (list.some((s) => s.item === prev)) sel.value = prev;
+    $("rankList").innerHTML = list.map((s) => {
+      const pv = perVoucher(s);
+      return `<li${pv ? "" : ' class="unpriced"'}>${itemIcon(s.item)}<span class="rk-name">${s.qty > 1 ? fmt(s.qty) + " " : ""}${s.item}</span>` +
+        `<span class="rk-val">${pv ? usd(pv * 1000) : "not priced"}</span></li>`;
+    }).join("");
     renderCart();
   }
   async function loadData() {
