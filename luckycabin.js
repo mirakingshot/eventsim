@@ -60,11 +60,11 @@
       { key: "p2", name: "Lucky Pack 2", priceUSD: 9.99, vouchers: 18, marks: 100, perDay: 1,
         items: [["Gems", 5000], ["100 VIP XP", 40], ["Lv.3 Custom Resource Chest", 40], ["Green chest (name?)", 1]] },
       { key: "p3", name: "Lucky Pack 3", priceUSD: 19.99, vouchers: 32, marks: 120, perDay: 1,
-        items: [["Gems", 10000], ["Red bag (name?)", 1], ["100 VIP XP", 60], ["Lv.3 Custom Resource Chest", 80]] },
+        items: [["Gems", 10000], ["Golden Autumn Pouch", 1], ["100 VIP XP", 60], ["Lv.3 Custom Resource Chest", 80]] },
       { key: "p4", name: "Lucky Pack 4", priceUSD: 49.99, vouchers: 75, marks: 200, perDay: 1,
-        items: [["Gems", 25000], ["Red bag (name?)", 2], ["1,000 VIP XP", 12], ["Lv.3 Custom Resource Chest", 200]] },
+        items: [["Gems", 25000], ["Golden Autumn Pouch", 2], ["1,000 VIP XP", 12], ["Lv.3 Custom Resource Chest", 200]] },
       { key: "p5", name: "Lucky Pack 5", priceUSD: 99.99, vouchers: 130, marks: 300, perDay: 3,
-        items: [["Gems", 50000], ["Red bag (name?)", 3], ["1,000 VIP XP", 20], ["Lv.3 Custom Resource Chest", 400]] },
+        items: [["Gems", 50000], ["Golden Autumn Pouch", 3], ["1,000 VIP XP", 20], ["Lv.3 Custom Resource Chest", 400]] },
     ],
   };
   const packLimit = (cfg, p) => p.perDay * cfg.eventDays;
